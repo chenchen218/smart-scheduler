@@ -1,71 +1,94 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import '../models/todo_list.dart';
+import 'dart:async';
+import 'dart:math';
+import '../models/task.dart';
+import '../widgets/task_card.dart';
 
-class HomeScreen extends StatelessWidget {
-  const HomeScreen({super.key});
+class HomePage extends StatefulWidget {
+  const HomePage({super.key});
+
+  @override
+  _HomePageState createState() => _HomePageState();
+}
+
+class _HomePageState extends State<HomePage> {
+  final List<Task> tasks = [];
+  final GlobalKey<AnimatedListState> _listKey = GlobalKey();
+  final Random rand = Random();
+  Timer? autoTimer;
+
+  final List<String> sampleTasks = [
+    "Buy groceries",
+    "Read Flutter docs",
+    "Walk the dog",
+    "Check emails",
+    "Call Alice",
+    "Fix bug #23",
+    "Push new commit",
+    "Prepare slides",
+  ];
+
+  @override
+  void initState() {
+    super.initState();
+    _startAutoAddTasks();
+  }
+
+  void _startAutoAddTasks() {
+    autoTimer = Timer.periodic(Duration(milliseconds: 500), (_) {
+      if (tasks.length >= 8) {
+        autoTimer?.cancel();
+        return;
+      }
+      final name = sampleTasks[rand.nextInt(sampleTasks.length)];
+      final priority = ["Low", "Medium", "High"][rand.nextInt(3)];
+      final task = Task(name: name, priority: priority);
+      tasks.insert(0, task);
+      _listKey.currentState?.insertItem(0);
+
+      Future.delayed(Duration(milliseconds: 1000 + rand.nextInt(1000)), () {
+        if (mounted && tasks.contains(task)) {
+          setState(() {
+            task.done = true;
+          });
+        }
+      });
+    });
+  }
+
+  @override
+  void dispose() {
+    autoTimer?.cancel();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
-    final todoList = Provider.of<TodoList>(context);
-
-    final TextEditingController controller = TextEditingController();
-
     return Scaffold(
-      appBar: AppBar(title: const Text("Mini To-Do App")),
-      body: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: Row(
-              children: [
-                Expanded(
-                  child: TextField(
-                    controller: controller,
-                    decoration: const InputDecoration(
-                      hintText: 'Enter new task',
-                    ),
-                  ),
-                ),
-                IconButton(
-                  icon: const Icon(Icons.add),
-                  onPressed: () {
-                    if (controller.text.isNotEmpty) {
-                      todoList.addTodo(controller.text);
-                      controller.clear();
-                    }
-                  },
-                ),
-              ],
+      appBar: AppBar(title: Text("Auto To-Do Demo")),
+      body: AnimatedList(
+        key: _listKey,
+        initialItemCount: tasks.length,
+        itemBuilder: (context, index, animation) {
+          final task = tasks[index];
+          return SizeTransition(
+            sizeFactor: animation,
+            child: Dismissible(
+              key: Key(task.name + index.toString()),
+              background: Container(
+                color: Colors.red,
+                alignment: Alignment.centerLeft,
+                padding: EdgeInsets.only(left: 16),
+                child: Icon(Icons.delete, color: Colors.white, size: 36),
+              ),
+              onDismissed: (_) => setState(() => tasks.removeAt(index)),
+              child: TaskCard(
+                task: task,
+                onChecked: (val) => setState(() => task.done = val ?? false),
+              ),
             ),
-          ),
-          Expanded(
-            child: ListView.builder(
-              itemCount: todoList.todos.length,
-              itemBuilder: (context, index) {
-                final todo = todoList.todos[index];
-                return ListTile(
-                  title: Text(
-                    todo.title,
-                    style: TextStyle(
-                      decoration: todo.isDone
-                          ? TextDecoration.lineThrough
-                          : null,
-                    ),
-                  ),
-                  leading: Checkbox(
-                    value: todo.isDone,
-                    onChanged: (_) => todoList.toggleTodo(index),
-                  ),
-                  trailing: IconButton(
-                    icon: const Icon(Icons.delete),
-                    onPressed: () => todoList.removeTodo(index),
-                  ),
-                );
-              },
-            ),
-          ),
-        ],
+          );
+        },
       ),
     );
   }
