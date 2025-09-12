@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 import '../models/calendar_event.dart';
 
 class EventCard extends StatelessWidget {
@@ -7,6 +6,7 @@ class EventCard extends StatelessWidget {
   final VoidCallback? onTap;
   final VoidCallback? onEdit;
   final VoidCallback? onDelete;
+  final ValueChanged<bool>? onToggle;
 
   const EventCard({
     super.key,
@@ -14,6 +14,7 @@ class EventCard extends StatelessWidget {
     this.onTap,
     this.onEdit,
     this.onDelete,
+    this.onToggle,
   });
 
   @override
@@ -51,6 +52,18 @@ class EventCard extends StatelessWidget {
               padding: const EdgeInsets.all(16),
               child: Row(
                 children: [
+                  // Checkbox for completion (left side)
+                  Checkbox(
+                    value: event.isCompleted,
+                    onChanged: onToggle != null
+                        ? (value) => onToggle!(value ?? false)
+                        : null,
+                    activeColor: colorScheme.primary,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
                   // Time indicator
                   Container(
                     width: 4,
@@ -104,6 +117,9 @@ class EventCard extends StatelessWidget {
                               ),
                           ],
                         ),
+                        const SizedBox(height: 8),
+                        // Priority indicator below title
+                        _buildPriorityChip(event.priority),
                         if (event.description.isNotEmpty) ...[
                           const SizedBox(height: 4),
                           Text(
@@ -252,6 +268,62 @@ class EventCard extends StatelessWidget {
             ),
           ),
         ),
+      ),
+    );
+  }
+
+  /// Builds a priority chip with color coding and dot indicator
+  Widget _buildPriorityChip(String priority) {
+    Color dotColor;
+    Color chipColor;
+    Color textColor;
+
+    switch (priority.toLowerCase()) {
+      case 'high':
+        dotColor = Colors.red;
+        chipColor = Colors.red.shade50;
+        textColor = Colors.red.shade800;
+        break;
+      case 'medium':
+        dotColor = Colors.orange;
+        chipColor = Colors.orange.shade50;
+        textColor = Colors.orange.shade800;
+        break;
+      case 'low':
+        dotColor = Colors.green;
+        chipColor = Colors.green.shade50;
+        textColor = Colors.green.shade800;
+        break;
+      default:
+        dotColor = Colors.grey;
+        chipColor = Colors.grey.shade50;
+        textColor = Colors.grey.shade800;
+    }
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: chipColor,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 6,
+            height: 6,
+            decoration: BoxDecoration(color: dotColor, shape: BoxShape.circle),
+          ),
+          const SizedBox(width: 6),
+          Text(
+            priority,
+            style: TextStyle(
+              color: textColor,
+              fontSize: 11,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
       ),
     );
   }

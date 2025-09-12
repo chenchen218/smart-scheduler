@@ -97,6 +97,37 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
     print('Event removed from list: ${event.title}');
   }
 
+  /// Toggles event completion status and updates the calendar service
+  void _toggleEventCompletion(CalendarEvent event, bool isCompleted) async {
+    try {
+      // Create updated event with new completion status
+      final updatedEvent = event.copyWith(isCompleted: isCompleted);
+
+      // Update in calendar service
+      await _calendarService.updateEvent(updatedEvent);
+
+      // Update local state
+      setState(() {
+        final index = events.indexWhere((e) => e.id == event.id);
+        if (index != -1) {
+          events[index] = updatedEvent;
+        }
+      });
+
+      print(
+        'Event ${event.title} marked as ${isCompleted ? 'completed' : 'incomplete'}',
+      );
+    } catch (e) {
+      print('Error toggling event completion: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error updating event: $e'),
+          backgroundColor: Theme.of(context).colorScheme.error,
+        ),
+      );
+    }
+  }
+
   /// Automatically generates and adds tasks to the list every 500ms
   /// Tasks are randomly selected from sampleTasks array with random priority
   /// Tasks automatically get marked as done after 1-2 seconds
@@ -267,11 +298,15 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
               // Show event details
             },
             onEdit: () {
-              // Edit event
+              _editEvent(event);
             },
             onDelete: () {
               // Delete event
               _deleteEvent(event);
+            },
+            onToggle: (isCompleted) {
+              // Toggle event completion
+              _toggleEventCompletion(event, isCompleted);
             },
           ),
         );
@@ -658,11 +693,18 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                                               // Show event details
                                             },
                                             onEdit: () {
-                                              // Edit event
+                                              _editEvent(event);
                                             },
                                             onDelete: () {
                                               // Delete event
                                               _deleteEvent(event);
+                                            },
+                                            onToggle: (isCompleted) {
+                                              // Toggle event completion
+                                              _toggleEventCompletion(
+                                                event,
+                                                isCompleted,
+                                              );
                                             },
                                           ),
                                         ),
@@ -681,6 +723,20 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
         ),
       ),
     );
+  }
+
+  /// Navigates to the AddEventScreen for editing an existing event
+  /// Refreshes the events list when returning from the edit screen
+  void _editEvent(CalendarEvent event) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => AddEventScreen(eventToEdit: event),
+      ),
+    ).then((_) {
+      // Refresh events when returning from edit screen
+      _loadEvents();
+    });
   }
 
   /// Shows confirmation dialog and deletes an event from both UI and storage

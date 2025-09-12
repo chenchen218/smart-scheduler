@@ -12,6 +12,7 @@ class CalendarEvent {
   final String? location;
   final List<String> tags;
   final bool isCompleted;
+  final String priority;
 
   CalendarEvent({
     required this.id,
@@ -25,6 +26,7 @@ class CalendarEvent {
     this.location,
     this.tags = const [],
     this.isCompleted = false,
+    this.priority = 'Medium',
   });
 
   CalendarEvent copyWith({
@@ -39,6 +41,7 @@ class CalendarEvent {
     String? location,
     List<String>? tags,
     bool? isCompleted,
+    String? priority,
   }) {
     return CalendarEvent(
       id: id ?? this.id,
@@ -52,6 +55,7 @@ class CalendarEvent {
       location: location ?? this.location,
       tags: tags ?? this.tags,
       isCompleted: isCompleted ?? this.isCompleted,
+      priority: priority ?? this.priority,
     );
   }
 
@@ -70,6 +74,7 @@ class CalendarEvent {
       'location': location,
       'tags': tags,
       'isCompleted': isCompleted,
+      'priority': priority,
     };
   }
 
@@ -94,6 +99,7 @@ class CalendarEvent {
       location: json['location'],
       tags: List<String>.from(json['tags'] ?? []),
       isCompleted: json['isCompleted'] ?? false,
+      priority: json['priority'] ?? 'Medium',
     );
   }
 
