@@ -163,7 +163,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
         margin: const EdgeInsets.symmetric(vertical: 8),
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: colorScheme.surfaceVariant.withOpacity(0.3),
+          color: colorScheme.surfaceContainerHighest.withOpacity(0.3),
           borderRadius: BorderRadius.circular(8),
         ),
         child: Text(
@@ -439,7 +439,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                       Container(
                         height: 8,
                         decoration: BoxDecoration(
-                          color: colorScheme.surfaceVariant,
+                          color: colorScheme.surfaceContainerHighest,
                           borderRadius: BorderRadius.circular(4),
                         ),
                         child: FractionallySizedBox(
@@ -467,7 +467,9 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                     Container(
                       margin: const EdgeInsets.symmetric(horizontal: 16),
                       decoration: BoxDecoration(
-                        color: colorScheme.surfaceVariant.withOpacity(0.3),
+                        color: colorScheme.surfaceContainerHighest.withOpacity(
+                          0.3,
+                        ),
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: TabBar(

@@ -36,7 +36,7 @@ class EventCard extends StatelessWidget {
                   ? LinearGradient(
                       colors: [
                         colorScheme.surface,
-                        colorScheme.surfaceVariant.withOpacity(0.3),
+                        colorScheme.surfaceContainerHighest.withOpacity(0.3),
                       ],
                     )
                   : null,
