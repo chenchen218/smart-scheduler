@@ -86,6 +86,7 @@ class EventCard extends StatelessWidget {
                                 event.title,
                                 style: Theme.of(context).textTheme.titleMedium
                                     ?.copyWith(
+                                      fontSize: 20,
                                       decoration: event.isCompleted
                                           ? TextDecoration.lineThrough
                                           : null,

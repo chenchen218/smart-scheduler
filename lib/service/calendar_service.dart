@@ -1,71 +1,34 @@
-import 'dart:convert';
-import 'package:shared_preferences/shared_preferences.dart';
 import '../models/calendar_event.dart';
+import 'firebase_service.dart';
 
 class CalendarService {
-  static const String _baseUrl =
-      'https://api.example.com/calendar'; // Replace with your API
-  static const String _localStorageKey = 'calendar_events';
+  final FirebaseService _firebaseService = FirebaseService();
 
-  // Local storage methods
-  Future<List<CalendarEvent>> getLocalEvents() async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      final eventsJson = prefs.getStringList(_localStorageKey) ?? [];
-      return eventsJson
-          .map((json) => CalendarEvent.fromJson(jsonDecode(json)))
-          .toList();
-    } catch (e) {
-      print('Error loading local events: $e');
-      return [];
-    }
-  }
-
-  Future<void> saveLocalEvents(List<CalendarEvent> events) async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      final eventsJson = events
-          .map((event) => jsonEncode(event.toJson()))
-          .toList();
-      await prefs.setStringList(_localStorageKey, eventsJson);
-    } catch (e) {
-      print('Error saving local events: $e');
-    }
-  }
-
-  // API methods (mock implementation - replace with real API calls)
+  /// Get all events from Firebase
   Future<List<CalendarEvent>> getEvents() async {
     try {
-      // For now, return local events
-      // In a real app, you would make an API call here
-      return await getLocalEvents();
+      return await _firebaseService.getEvents();
     } catch (e) {
       print('Error fetching events: $e');
       return [];
     }
   }
 
+  /// Create a new event in Firebase
   Future<CalendarEvent> createEvent(CalendarEvent event) async {
     try {
-      // Mock API call - replace with real implementation
-      final events = await getLocalEvents();
-      events.add(event);
-      await saveLocalEvents(events);
-      return event;
+      final eventId = await _firebaseService.createEvent(event);
+      return event.copyWith(id: eventId);
     } catch (e) {
       print('Error creating event: $e');
       rethrow;
     }
   }
 
+  /// Update an existing event in Firebase
   Future<CalendarEvent> updateEvent(CalendarEvent event) async {
     try {
-      final events = await getLocalEvents();
-      final index = events.indexWhere((e) => e.id == event.id);
-      if (index != -1) {
-        events[index] = event;
-        await saveLocalEvents(events);
-      }
+      await _firebaseService.updateEvent(event);
       return event;
     } catch (e) {
       print('Error updating event: $e');
@@ -73,81 +36,73 @@ class CalendarService {
     }
   }
 
+  /// Delete an event from Firebase
   Future<void> deleteEvent(String eventId) async {
     try {
-      final events = await getLocalEvents();
-      events.removeWhere((event) => event.id == eventId);
-      await saveLocalEvents(events);
+      await _firebaseService.deleteEvent(eventId);
     } catch (e) {
       print('Error deleting event: $e');
       rethrow;
     }
   }
 
+  /// Get events for a specific date from Firebase
   Future<List<CalendarEvent>> getEventsForDate(DateTime date) async {
     try {
-      final events = await getLocalEvents();
-      return events.where((event) {
-        return event.date.year == date.year &&
-            event.date.month == date.month &&
-            event.date.day == date.day;
-      }).toList();
+      return await _firebaseService.getEventsForDate(date);
     } catch (e) {
       print('Error fetching events for date: $e');
       return [];
     }
   }
 
+  /// Get events for a specific month from Firebase
   Future<List<CalendarEvent>> getEventsForMonth(DateTime month) async {
     try {
-      final events = await getLocalEvents();
-      return events.where((event) {
-        return event.date.year == month.year && event.date.month == month.month;
-      }).toList();
+      return await _firebaseService.getEventsForMonth(month);
     } catch (e) {
       print('Error fetching events for month: $e');
       return [];
     }
   }
 
-  // Real API implementation example (uncomment and modify as needed)
-  /*
-  Future<List<CalendarEvent>> getEventsFromAPI() async {
+  /// Get events by priority from Firebase
+  Future<List<CalendarEvent>> getEventsByPriority(String priority) async {
     try {
-      final response = await http.get(
-        Uri.parse('$_baseUrl/events'),
-        headers: {'Content-Type': 'application/json'},
-      );
-
-      if (response.statusCode == 200) {
-        final List<dynamic> data = jsonDecode(response.body);
-        return data.map((json) => CalendarEvent.fromJson(json)).toList();
-      } else {
-        throw Exception('Failed to load events: ${response.statusCode}');
-      }
+      return await _firebaseService.getEventsByPriority(priority);
     } catch (e) {
-      print('API Error: $e');
-      rethrow;
+      print('Error fetching events by priority: $e');
+      return [];
     }
   }
 
-  Future<CalendarEvent> createEventAPI(CalendarEvent event) async {
+  /// Get completed events from Firebase
+  Future<List<CalendarEvent>> getCompletedEvents() async {
     try {
-      final response = await http.post(
-        Uri.parse('$_baseUrl/events'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode(event.toJson()),
-      );
-
-      if (response.statusCode == 201) {
-        return CalendarEvent.fromJson(jsonDecode(response.body));
-      } else {
-        throw Exception('Failed to create event: ${response.statusCode}');
-      }
+      return await _firebaseService.getCompletedEvents();
     } catch (e) {
-      print('API Error: $e');
-      rethrow;
+      print('Error fetching completed events: $e');
+      return [];
     }
   }
-  */
+
+  /// Get pending events from Firebase
+  Future<List<CalendarEvent>> getPendingEvents() async {
+    try {
+      return await _firebaseService.getPendingEvents();
+    } catch (e) {
+      print('Error fetching pending events: $e');
+      return [];
+    }
+  }
+
+  /// Search events by title in Firebase
+  Future<List<CalendarEvent>> searchEvents(String query) async {
+    try {
+      return await _firebaseService.searchEvents(query);
+    } catch (e) {
+      print('Error searching events: $e');
+      return [];
+    }
+  }
 }
