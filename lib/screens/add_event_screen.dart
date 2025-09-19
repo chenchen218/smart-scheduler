@@ -388,6 +388,7 @@ class _AddEventScreenState extends State<AddEventScreen> {
               style: TextStyle(
                 color: colorScheme.primary,
                 fontWeight: FontWeight.w600,
+                fontSize: 18, // Increased from default 14
               ),
             ),
           ),
