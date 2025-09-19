@@ -3,7 +3,9 @@ import 'screens/home.dart';
 import 'screens/calendar_screen.dart';
 import 'theme/app_theme.dart';
 
-void main() => runApp(MiniTodoApp());
+void main() {
+  runApp(MiniTodoApp());
+}
 
 class MiniTodoApp extends StatelessWidget {
   const MiniTodoApp({super.key});

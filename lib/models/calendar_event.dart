@@ -59,6 +59,16 @@ class CalendarEvent {
     );
   }
 
+  /// Helper method to parse TimeOfDay from string
+  static TimeOfDay _parseTimeOfDay(String timeString) {
+    final parts = timeString.split(':');
+    if (parts.length == 2) {
+      return TimeOfDay(hour: int.parse(parts[0]), minute: int.parse(parts[1]));
+    }
+    // Fallback to current time if parsing fails
+    return TimeOfDay.now();
+  }
+
   Map<String, dynamic> toJson() {
     return {
       'id': id,
@@ -85,14 +95,10 @@ class CalendarEvent {
       description: json['description'] ?? '',
       date: DateTime.parse(json['date']),
       startTime: json['startTime'] != null
-          ? TimeOfDay.fromDateTime(
-              DateTime.parse('2023-01-01 ${json['startTime']}'),
-            )
+          ? _parseTimeOfDay(json['startTime'])
           : null,
       endTime: json['endTime'] != null
-          ? TimeOfDay.fromDateTime(
-              DateTime.parse('2023-01-01 ${json['endTime']}'),
-            )
+          ? _parseTimeOfDay(json['endTime'])
           : null,
       color: Color(json['color']),
       isAllDay: json['isAllDay'] ?? false,

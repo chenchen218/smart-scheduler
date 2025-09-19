@@ -45,5 +45,8 @@
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+	<!-- Microphone permission for voice input -->
+	<key>NSMicrophoneUsageDescription</key>
+	<string>This app needs access to microphone for voice input to create events and tasks.</string>
 </dict>
 </plist>
