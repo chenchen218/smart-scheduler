@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'screens/home.dart';
+import 'screens/home/home_screen.dart';
 import 'screens/calendar_screen.dart';
 import 'theme/app_theme.dart';
 
@@ -32,7 +32,7 @@ class MainNavigationScreen extends StatefulWidget {
 class _MainNavigationScreenState extends State<MainNavigationScreen> {
   int _currentIndex = 0;
 
-  final List<Widget> _screens = [const HomePage(), const CalendarScreen()];
+  final List<Widget> _screens = [const HomeScreen(), const CalendarScreen()];
 
   @override
   Widget build(BuildContext context) {

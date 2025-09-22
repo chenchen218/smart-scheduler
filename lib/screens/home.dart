@@ -6,7 +6,7 @@ import '../models/calendar_event.dart';
 import '../widgets/task_card.dart';
 import '../widgets/event_card.dart';
 import '../service/calendar_service.dart';
-import 'add_event_screen.dart';
+import 'add_event/add_event_screen.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});

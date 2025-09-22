@@ -4,7 +4,7 @@ import 'package:intl/intl.dart';
 import '../models/calendar_event.dart';
 import '../service/calendar_service.dart';
 import '../widgets/event_card.dart';
-import 'add_event_screen.dart';
+import 'add_event/add_event_screen.dart';
 
 class CalendarScreen extends StatefulWidget {
   const CalendarScreen({super.key});
