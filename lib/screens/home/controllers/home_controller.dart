@@ -17,6 +17,7 @@ class HomeController extends ChangeNotifier {
   final Random rand = Random();
   final CalendarService calendarService = CalendarService();
   Timer? autoTimer;
+  Timer? _debounceTimer;
 
   final List<String> sampleTasks = [
     "Buy groceries",
@@ -49,12 +50,17 @@ class HomeController extends ChangeNotifier {
     );
 
     tasks.add(task);
-    notifyListeners();
 
-    // Animate the addition
+    // Animate the addition first, then notify
     if (listKey.currentState != null) {
       listKey.currentState!.insertItem(tasks.length - 1);
     }
+
+    // Debounced notification to reduce rebuilds
+    _debounceTimer?.cancel();
+    _debounceTimer = Timer(const Duration(milliseconds: 16), () {
+      notifyListeners();
+    });
   }
 
   /// Toggle task completion status
@@ -66,7 +72,7 @@ class HomeController extends ChangeNotifier {
         priority: task.priority,
         done: !task.done,
       );
-      notifyListeners();
+      // Don't notify listeners for simple toggles - let the UI handle it
     }
   }
 
@@ -74,10 +80,7 @@ class HomeController extends ChangeNotifier {
   void deleteTask(Task task) {
     final index = tasks.indexOf(task);
     if (index != -1) {
-      tasks.removeAt(index);
-      notifyListeners();
-
-      // Animate the removal
+      // Animate the removal first
       if (listKey.currentState != null) {
         listKey.currentState!.removeItem(
           index,
@@ -85,6 +88,15 @@ class HomeController extends ChangeNotifier {
               SizeTransition(sizeFactor: animation, child: Container()),
         );
       }
+
+      // Remove from list after animation starts
+      tasks.removeAt(index);
+
+      // Debounced notification
+      _debounceTimer?.cancel();
+      _debounceTimer = Timer(const Duration(milliseconds: 16), () {
+        notifyListeners();
+      });
     }
   }
 
@@ -134,10 +146,8 @@ class HomeController extends ChangeNotifier {
     final index = events.indexOf(event);
     if (index != -1) {
       print('Event removed from list: ${event.title}');
-      events.removeAt(index);
-      notifyListeners();
 
-      // Animate the removal
+      // Animate the removal first
       if (eventsListKey.currentState != null) {
         eventsListKey.currentState!.removeItem(
           index,
@@ -145,6 +155,15 @@ class HomeController extends ChangeNotifier {
               SizeTransition(sizeFactor: animation, child: Container()),
         );
       }
+
+      // Remove from list after animation starts
+      events.removeAt(index);
+
+      // Debounced notification
+      _debounceTimer?.cancel();
+      _debounceTimer = Timer(const Duration(milliseconds: 16), () {
+        notifyListeners();
+      });
     }
   }
 
@@ -242,6 +261,7 @@ class HomeController extends ChangeNotifier {
   @override
   void dispose() {
     autoTimer?.cancel();
+    _debounceTimer?.cancel();
     super.dispose();
   }
 }

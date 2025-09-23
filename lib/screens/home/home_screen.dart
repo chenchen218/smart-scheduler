@@ -45,7 +45,9 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   }
 
   void _onControllerUpdate() {
-    setState(() {});
+    if (mounted) {
+      setState(() {});
+    }
   }
 
   void _onAddEvent() {

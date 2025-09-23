@@ -65,7 +65,7 @@ class EventListWidget extends StatelessWidget {
         final event = events[index];
         return SlideTransition(
           position: animation.drive(
-            Tween(
+            Tween<Offset>(
               begin: const Offset(1, 0),
               end: Offset.zero,
             ).chain(CurveTween(curve: Curves.easeOutCubic)),
