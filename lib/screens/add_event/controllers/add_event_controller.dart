@@ -189,6 +189,12 @@ class AddEventController extends ChangeNotifier {
     _showSnackBar('Smart suggestion applied!');
   }
 
+  /// Dismiss smart suggestions
+  void dismissSmartSuggestions() {
+    showSmartSuggestions = false;
+    notifyListeners();
+  }
+
   /// Update selected date
   void updateSelectedDate(DateTime date) {
     selectedDate = date;
