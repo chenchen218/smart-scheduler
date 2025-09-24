@@ -4,6 +4,7 @@ import '../../models/calendar_event.dart';
 import 'widgets/voice_input_section.dart';
 import 'widgets/priority_selection_widget.dart';
 import 'widgets/color_selection_widget.dart';
+import 'widgets/smart_suggestions_widget.dart';
 import 'controllers/add_event_controller.dart';
 
 /// Add Event Screen - Modularized Version
@@ -144,6 +145,14 @@ class _AddEventScreenState extends State<AddEventScreen> {
                         _controller.generateSmartSuggestions,
                   ),
                   const SizedBox(height: 16),
+
+                  // Smart Suggestions (if available)
+                  if (_controller.showSmartSuggestions)
+                    SmartSuggestionsWidget(
+                      suggestions: _controller.smartSuggestions,
+                      onApplySuggestion: _controller.applySuggestion,
+                      onDismiss: _controller.dismissSmartSuggestions,
+                    ),
 
                   // Description
                   TextFormField(
