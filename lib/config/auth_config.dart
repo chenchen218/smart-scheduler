@@ -3,7 +3,7 @@
 class AuthConfig {
   /// Set to true to use mock authentication for testing
   /// Set to false to use real Firebase authentication
-  static const bool useMockAuth = true;
+  static const bool useMockAuth = false;
 
   /// Mock credentials for testing
   static const String mockEmail = 'test@example.com';

@@ -41,45 +41,46 @@ class DefaultFirebaseOptions {
   }
 
   static const FirebaseOptions web = FirebaseOptions(
-    apiKey: 'your-web-api-key',
-    appId: 'your-web-app-id',
-    messagingSenderId: 'your-sender-id',
-    projectId: 'your-project-id',
-    authDomain: 'your-project-id.firebaseapp.com',
-    storageBucket: 'your-project-id.appspot.com',
+    apiKey: 'AIzaSyD1rUbQB0USpFEBoSO1kH6QYRTvl_OKPvo',
+    appId:
+        '1:796545909849:web:abb40c2cd60d583f87dd48', // Get this from Firebase Console
+    messagingSenderId: '796545909849',
+    projectId: 'to-do-list-2b175',
+    authDomain: 'to-do-list-2b175.firebaseapp.com',
+    storageBucket: 'to-do-list-2b175.appspot.com',
   );
 
   static const FirebaseOptions android = FirebaseOptions(
-    apiKey: 'your-android-api-key',
-    appId: 'your-android-app-id',
-    messagingSenderId: 'your-sender-id',
-    projectId: 'your-project-id',
-    storageBucket: 'your-project-id.appspot.com',
+    apiKey: 'AIzaSyB5Lpd9Poyjx1QX8djSxPv8JcCYujmVOv0',
+    appId: '1:796545909849:android:0fc96b3d44102cb287dd48',
+    messagingSenderId: '796545909849',
+    projectId: 'to-do-list-2b175',
+    storageBucket: 'to-do-list-2b175.appspot.com',
   );
 
   static const FirebaseOptions ios = FirebaseOptions(
-    apiKey: 'your-ios-api-key',
-    appId: 'your-ios-app-id',
-    messagingSenderId: 'your-sender-id',
-    projectId: 'your-project-id',
-    storageBucket: 'your-project-id.appspot.com',
+    apiKey: 'AIzaSyB5Lpd9Poyjx1QX8djSxPv8JcCYujmVOv0',
+    appId: '1:796545909849:ios:a212f4d4c9ef542887dd48',
+    messagingSenderId: '796545909849',
+    projectId: 'to-do-list-2b175',
+    storageBucket: 'to-do-list-2b175.appspot.com',
     iosBundleId: 'com.example.mini_todo_app',
   );
 
   static const FirebaseOptions macos = FirebaseOptions(
-    apiKey: 'your-macos-api-key',
+    apiKey: 'AIzaSyB5Lpd9Poyjx1QX8djSxPv8JcCYujmVOv0',
     appId: 'your-macos-app-id',
-    messagingSenderId: 'your-sender-id',
-    projectId: 'your-project-id',
-    storageBucket: 'your-project-id.appspot.com',
+    messagingSenderId: '796545909849',
+    projectId: 'to-do-list-2b175',
+    storageBucket: 'to-do-list-2b175.appspot.com',
     iosBundleId: 'com.example.mini_todo_app',
   );
 
   static const FirebaseOptions windows = FirebaseOptions(
-    apiKey: 'your-windows-api-key',
+    apiKey: 'AIzaSyB5Lpd9Poyjx1QX8djSxPv8JcCYujmVOv0',
     appId: 'your-windows-app-id',
-    messagingSenderId: 'your-sender-id',
-    projectId: 'your-project-id',
-    storageBucket: 'your-project-id.appspot.com',
+    messagingSenderId: '796545909849',
+    projectId: 'to-do-list-2b175',
+    storageBucket: 'to-do-list-2b175.appspot.com',
   );
 }
