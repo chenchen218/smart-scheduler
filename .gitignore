@@ -44,5 +44,5 @@ app.*.map.json
 /android/app/profile
 /android/app/release
 
-# Firebase configuration (contains sensitive credentials)
+# Firebase configuration (contains sensitive credentials) +
 lib/firebase_options.dart
