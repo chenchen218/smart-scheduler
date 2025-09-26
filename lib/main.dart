@@ -1,9 +1,16 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:provider/provider.dart';
 import 'screens/home/home_screen.dart';
 import 'screens/calendar/calendar_screen.dart';
+import 'screens/auth/signin_screen.dart';
+import 'providers/auth_provider.dart';
 import 'theme/app_theme.dart';
+import 'firebase_options.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   runApp(MiniTodoApp());
 }
 
@@ -12,12 +19,43 @@ class MiniTodoApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      title: 'Mini To-Do App',
-      theme: AppTheme.lightTheme,
-      darkTheme: AppTheme.darkTheme,
-      home: const MainNavigationScreen(),
+    return MultiProvider(
+      providers: [ChangeNotifierProvider(create: (_) => AuthProvider())],
+      child: MaterialApp(
+        debugShowCheckedModeBanner: false,
+        title: 'Mini To-Do App',
+        theme: AppTheme.lightTheme,
+        darkTheme: AppTheme.darkTheme,
+        home: const AuthWrapper(),
+      ),
+    );
+  }
+}
+
+/// Authentication Wrapper
+/// Determines whether to show auth screens or main app based on auth state
+class AuthWrapper extends StatelessWidget {
+  const AuthWrapper({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Consumer<AuthProvider>(
+      builder: (context, authProvider, child) {
+        // Show loading screen while checking auth state
+        if (!authProvider.state.isInitialized) {
+          return const Scaffold(
+            body: Center(child: CircularProgressIndicator()),
+          );
+        }
+
+        // Show auth screens if not authenticated
+        if (!authProvider.isAuthenticated) {
+          return const SignInScreen();
+        }
+
+        // Show main app if authenticated
+        return const MainNavigationScreen();
+      },
     );
   }
 }
