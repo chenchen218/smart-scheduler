@@ -44,5 +44,30 @@ app.*.map.json
 /android/app/profile
 /android/app/release
 
-# Firebase configuration (contains sensitive credentials) +
+# Firebase configuration (contains sensitive credentials)
 lib/firebase_options.dart
+
+# Environment files
+.env
+.env.local
+.env.production
+.env.*.local
+
+# Setup scripts with credentials
+setup_env.sh
+
+# Firebase and Google credentials
+google-services.json
+GoogleService-Info.plist
+firebase-debug.log
+.firebase/
+
+# IDE and editor files
+.vscode/settings.json
+.idea/
+*.swp
+*.swo
+
+# OS generated files
+Thumbs.db
+.DS_Store
