@@ -90,6 +90,7 @@ lib/
 - Dart SDK (3.0+)
 - Android Studio / VS Code
 - Chrome (for web development)
+- Firebase project (for authentication)
 
 ### Installation
 
@@ -106,14 +107,39 @@ lib/
    flutter pub get
    ```
 
-3. **Run the application**
+3. **Firebase Setup**
+
+   The app uses Firebase for authentication. You have two options:
+
+   #### Option A: Use Your Own Firebase Project (Recommended)
+
+   1. **Create a Firebase project** at [Firebase Console](https://console.firebase.google.com)
+   2. **Enable Authentication** with Email/Password and Google Sign-In
+   3. **Copy the template** and add your credentials:
+      ```bash
+      cp setup_env.sh.template setup_env.sh
+      ```
+   4. **Edit `setup_env.sh`** with your Firebase project credentials:
+      - `FIREBASE_PROJECT_ID`: Your Firebase project ID
+      - `FIREBASE_WEB_API_KEY`: Your web API key
+      - `FIREBASE_WEB_APP_ID`: Your web app ID
+      - And other platform-specific credentials
+
+   #### Option B: Use Mock Authentication (Development)
+
+   The app includes mock authentication for development. No Firebase setup required.
+
+4. **Run the application**
 
    ```bash
-   # For web
-   flutter run -d chrome
+   # Using Firebase (with your credentials)
+   ./setup_env.sh
 
-   # For mobile
-   flutter run
+   # Or manually with environment variables
+   flutter run -d chrome \
+     --dart-define=FIREBASE_PROJECT_ID=your-project-id \
+     --dart-define=FIREBASE_WEB_API_KEY=your-api-key \
+     # ... other variables
    ```
 
 ### 🔧 Development Setup
@@ -164,6 +190,12 @@ dependencies:
   # Data & Storage
   shared_preferences: ^2.2.2
 
+  # Firebase Authentication
+  firebase_core: ^2.24.2
+  firebase_auth: ^4.15.3
+  google_sign_in: ^6.1.6
+  firebase_storage: ^11.5.6
+
   # AI & Voice Features
   speech_to_text: ^6.6.0
   flutter_tts: ^3.8.5
@@ -171,6 +203,7 @@ dependencies:
 
   # Utilities
   intl: ^0.19.0
+  http: ^1.1.0
 ```
 
 ### AI & Voice Features
@@ -291,11 +324,30 @@ flutter build ios --release
 - Add comments for complex logic
 - Maintain consistent formatting
 
+## 🔐 Authentication
+
+### Firebase Authentication
+
+The app supports multiple authentication methods:
+
+- **Email/Password**: Traditional email-based authentication
+- **Google Sign-In**: One-click Google authentication
+- **Mock Authentication**: Development mode for testing
+
+### Security Features
+
+- **Environment Variables**: Firebase credentials stored securely
+- **User Isolation**: Each user's data is completely separate
+- **Secure Storage**: Local data encrypted per user
+- **No Hardcoded Secrets**: All credentials use environment variables
+
 ## 📈 Roadmap
 
 ### Upcoming Features
 
-- [ ] **Cloud Sync**: Firebase integration for data persistence
+- [x] **Firebase Integration**: Authentication and user management
+- [x] **User Isolation**: Secure per-user data storage
+- [ ] **Cloud Sync**: Real-time data synchronization
 - [ ] **Team Collaboration**: Shared calendars and tasks
 - [ ] **Advanced AI**: Machine learning for better scheduling
 - [ ] **Offline Support**: Full offline functionality
@@ -311,6 +363,12 @@ flutter build ios --release
 ## 🐛 Troubleshooting
 
 ### Common Issues
+
+#### Firebase Authentication Issues
+
+- **Invalid API Key**: Ensure your Firebase credentials are correct in `setup_env.sh`
+- **Google Sign-In Not Working**: Check that Google Sign-In is enabled in Firebase Console
+- **Environment Variables Not Loading**: Verify you're using `./setup_env.sh` to run the app
 
 #### Voice Input Not Working
 
@@ -329,6 +387,12 @@ flutter build ios --release
 - Run `flutter clean`
 - Delete `pubspec.lock`
 - Run `flutter pub get`
+
+#### Environment Setup Issues
+
+- **Script not executable**: Run `chmod +x setup_env.sh`
+- **Template not found**: Copy `setup_env.sh.template` to `setup_env.sh`
+- **Credentials missing**: Check that all Firebase environment variables are set
 
 ## 📄 License
 
