@@ -12,8 +12,16 @@ class AuthService {
   AuthService._internal();
 
   final FirebaseAuth _auth = FirebaseAuth.instance;
-  final GoogleSignIn _googleSignIn = GoogleSignIn();
+  GoogleSignIn? _googleSignIn;
   final MockAuthService _mockAuth = MockAuthService();
+
+  /// Get GoogleSignIn instance (lazy initialization)
+  GoogleSignIn get _googleSignInInstance {
+    if (_googleSignIn == null) {
+      _googleSignIn = GoogleSignIn();
+    }
+    return _googleSignIn!;
+  }
 
   /// Get current user
   User? get currentUser => _auth.currentUser;
@@ -97,7 +105,8 @@ class AuthService {
 
     try {
       // Trigger the authentication flow
-      final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
+      final GoogleSignInAccount? googleUser = await _googleSignInInstance
+          .signIn();
 
       if (googleUser == null) {
         return null; // User cancelled the sign-in
@@ -132,7 +141,11 @@ class AuthService {
     }
 
     try {
-      await Future.wait([_auth.signOut(), _googleSignIn.signOut()]);
+      if (_googleSignIn != null) {
+        await Future.wait([_auth.signOut(), _googleSignIn!.signOut()]);
+      } else {
+        await _auth.signOut();
+      }
     } catch (e) {
       throw 'Sign out failed: $e';
     }
