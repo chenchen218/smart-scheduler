@@ -42,9 +42,42 @@ class AuthWrapper extends StatelessWidget {
     return Consumer<AuthProvider>(
       builder: (context, authProvider, child) {
         // Show loading screen while checking auth state
-        if (!authProvider.state.isInitialized) {
+        if (!authProvider.state.isInitialized || authProvider.state.isLoading) {
           return const Scaffold(
-            body: Center(child: CircularProgressIndicator()),
+            body: Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  CircularProgressIndicator(),
+                  SizedBox(height: 16),
+                  Text('Loading...'),
+                ],
+              ),
+            ),
+          );
+        }
+
+        // Show error state if there's an error
+        if (authProvider.state.error != null) {
+          return Scaffold(
+            body: Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.error, size: 64, color: Colors.red),
+                  SizedBox(height: 16),
+                  Text('Error: ${authProvider.state.error}'),
+                  SizedBox(height: 16),
+                  ElevatedButton(
+                    onPressed: () {
+                      // Try to reinitialize auth
+                      authProvider.initializeAuth();
+                    },
+                    child: Text('Retry'),
+                  ),
+                ],
+              ),
+            ),
           );
         }
 

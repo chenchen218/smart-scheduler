@@ -23,13 +23,35 @@ class AuthProvider with ChangeNotifier {
     _initializeAuth();
   }
 
+  /// Public method to reinitialize auth (for retry functionality)
+  Future<void> initializeAuth() async {
+    await _initializeAuth();
+  }
+
   /// Initialize authentication state
   Future<void> _initializeAuth() async {
+    print('AuthProvider: Initializing authentication...');
     _setState(_state.copyWith(isLoading: true));
 
     try {
-      // Listen to auth state changes
+      // Check if user is already authenticated
+      final currentUser = _authService.getCurrentUserModel();
+      print('AuthProvider: Current user: ${currentUser?.email ?? 'null'}');
+
+      if (currentUser != null) {
+        _user = currentUser;
+        _setState(AuthState().authenticated(currentUser));
+        print('AuthProvider: User authenticated: ${currentUser.email}');
+      } else {
+        _setState(AuthState.unauthenticated);
+        print('AuthProvider: No authenticated user');
+      }
+
+      // Listen to auth state changes (only for real Firebase)
       _authService.authStateChanges.listen((User? firebaseUser) {
+        print(
+          'AuthProvider: Auth state changed: ${firebaseUser?.email ?? 'null'}',
+        );
         if (firebaseUser != null) {
           _user = UserModel.fromFirebaseUser(firebaseUser);
           _setState(AuthState().authenticated(_user!));
@@ -39,9 +61,14 @@ class AuthProvider with ChangeNotifier {
         }
       });
     } catch (e) {
+      print('AuthProvider: Error during initialization: $e');
       _setState(
         AuthState().errorState('Failed to initialize authentication: $e'),
       );
+    } finally {
+      // Ensure we mark as initialized even if there's an error
+      _setState(_state.copyWith(isLoading: false, isInitialized: true));
+      print('AuthProvider: Initialization complete. isInitialized: true');
     }
   }
 
@@ -50,6 +77,7 @@ class AuthProvider with ChangeNotifier {
     required String email,
     required String password,
   }) async {
+    print('AuthProvider: Starting sign in with email: $email');
     _setState(_state.copyWith(isLoading: true, error: null));
 
     try {
@@ -59,14 +87,17 @@ class AuthProvider with ChangeNotifier {
       );
 
       if (user != null) {
+        print('AuthProvider: Sign in successful for user: ${user.email}');
         _user = user;
         _setState(AuthState().authenticated(user));
         return true;
       } else {
+        print('AuthProvider: Sign in failed - no user returned');
         _setState(AuthState().errorState('Sign in failed'));
         return false;
       }
     } catch (e) {
+      print('AuthProvider: Sign in error: $e');
       _setState(AuthState().errorState(e.toString()));
       return false;
     }
