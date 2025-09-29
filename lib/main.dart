@@ -3,6 +3,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:provider/provider.dart';
 import 'screens/home/home_screen.dart';
 import 'screens/calendar/calendar_screen.dart';
+import 'screens/profile/profile_screen.dart';
 import 'screens/auth/signin_screen.dart';
 import 'providers/auth_provider.dart';
 import 'theme/app_theme.dart';
@@ -103,7 +104,11 @@ class MainNavigationScreen extends StatefulWidget {
 class _MainNavigationScreenState extends State<MainNavigationScreen> {
   int _currentIndex = 0;
 
-  final List<Widget> _screens = [const HomeScreen(), const CalendarScreen()];
+  final List<Widget> _screens = [
+    const HomeScreen(),
+    const CalendarScreen(),
+    const ProfileScreen(),
+  ];
 
   @override
   Widget build(BuildContext context) {
@@ -141,6 +146,10 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
             BottomNavigationBarItem(
               icon: Icon(Icons.calendar_month_rounded),
               label: 'Calendar',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.person_rounded),
+              label: 'Profile',
             ),
           ],
         ),
