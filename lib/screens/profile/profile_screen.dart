@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
+import '../../providers/settings_provider.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
@@ -144,28 +145,36 @@ class ProfileScreen extends StatelessWidget {
               ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
             ),
           ),
-          ListTile(
-            leading: const Icon(Icons.notifications),
-            title: const Text('Notifications'),
-            subtitle: const Text('Manage your notification preferences'),
-            trailing: Switch(
-              value: true, // You can implement this with SharedPreferences
-              onChanged: (value) {
-                // Handle notification toggle
-              },
-            ),
+          Consumer<SettingsProvider>(
+            builder: (context, settingsProvider, child) {
+              return ListTile(
+                leading: const Icon(Icons.notifications),
+                title: const Text('Notifications'),
+                subtitle: const Text('Manage your notification preferences'),
+                trailing: Switch(
+                  value: settingsProvider.notificationsEnabled,
+                  onChanged: (value) {
+                    settingsProvider.toggleNotifications();
+                  },
+                ),
+              );
+            },
           ),
           const Divider(height: 1),
-          ListTile(
-            leading: const Icon(Icons.dark_mode),
-            title: const Text('Dark Mode'),
-            subtitle: const Text('Switch between light and dark themes'),
-            trailing: Switch(
-              value: false, // You can implement this with SharedPreferences
-              onChanged: (value) {
-                // Handle theme toggle
-              },
-            ),
+          Consumer<SettingsProvider>(
+            builder: (context, settingsProvider, child) {
+              return ListTile(
+                leading: const Icon(Icons.dark_mode),
+                title: const Text('Dark Mode'),
+                subtitle: const Text('Switch between light and dark themes'),
+                trailing: Switch(
+                  value: settingsProvider.darkModeEnabled,
+                  onChanged: (value) {
+                    settingsProvider.toggleDarkMode();
+                  },
+                ),
+              );
+            },
           ),
           const Divider(height: 1),
           ListTile(
@@ -217,15 +226,53 @@ class ProfileScreen extends StatelessWidget {
             onPressed: () => Navigator.pop(context),
             child: const Text('Cancel'),
           ),
-          ElevatedButton(
-            onPressed: () {
-              // TODO: Implement name update
-              Navigator.pop(context);
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Name updated successfully')),
+          Consumer<AuthProvider>(
+            builder: (context, authProvider, child) {
+              return ElevatedButton(
+                onPressed: authProvider.state.isLoading
+                    ? null
+                    : () async {
+                        final newName = nameController.text.trim();
+                        if (newName.isEmpty) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Name cannot be empty'),
+                            ),
+                          );
+                          return;
+                        }
+
+                        final success = await authProvider.updateUserProfile(
+                          displayName: newName,
+                        );
+
+                        if (success) {
+                          Navigator.pop(context);
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Name updated successfully'),
+                            ),
+                          );
+                        } else {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(
+                                'Failed to update name: ${authProvider.state.error}',
+                              ),
+                              backgroundColor: Colors.red,
+                            ),
+                          );
+                        }
+                      },
+                child: authProvider.state.isLoading
+                    ? const SizedBox(
+                        width: 16,
+                        height: 16,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Text('Save'),
               );
             },
-            child: const Text('Save'),
           ),
         ],
       ),
@@ -233,17 +280,124 @@ class ProfileScreen extends StatelessWidget {
   }
 
   void _showChangePasswordDialog(BuildContext context) {
+    final currentPasswordController = TextEditingController();
+    final newPasswordController = TextEditingController();
+    final confirmPasswordController = TextEditingController();
+
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Change Password'),
-        content: const Text(
-          'Password change functionality will be implemented soon.',
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: currentPasswordController,
+              decoration: const InputDecoration(
+                labelText: 'Current Password',
+                hintText: 'Enter your current password',
+              ),
+              obscureText: true,
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: newPasswordController,
+              decoration: const InputDecoration(
+                labelText: 'New Password',
+                hintText: 'Enter your new password',
+              ),
+              obscureText: true,
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: confirmPasswordController,
+              decoration: const InputDecoration(
+                labelText: 'Confirm New Password',
+                hintText: 'Confirm your new password',
+              ),
+              obscureText: true,
+            ),
+          ],
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('OK'),
+            child: const Text('Cancel'),
+          ),
+          Consumer<AuthProvider>(
+            builder: (context, authProvider, child) {
+              return ElevatedButton(
+                onPressed: authProvider.state.isLoading
+                    ? null
+                    : () async {
+                        final currentPassword = currentPasswordController.text
+                            .trim();
+                        final newPassword = newPasswordController.text.trim();
+                        final confirmPassword = confirmPasswordController.text
+                            .trim();
+
+                        if (currentPassword.isEmpty ||
+                            newPassword.isEmpty ||
+                            confirmPassword.isEmpty) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('All fields are required'),
+                            ),
+                          );
+                          return;
+                        }
+
+                        if (newPassword != confirmPassword) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('New passwords do not match'),
+                            ),
+                          );
+                          return;
+                        }
+
+                        if (newPassword.length < 6) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text(
+                                'Password must be at least 6 characters',
+                              ),
+                            ),
+                          );
+                          return;
+                        }
+
+                        final success = await authProvider.updatePassword(
+                          newPassword,
+                        );
+
+                        if (success) {
+                          Navigator.pop(context);
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Password updated successfully'),
+                            ),
+                          );
+                        } else {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(
+                                'Failed to update password: ${authProvider.state.error}',
+                              ),
+                              backgroundColor: Colors.red,
+                            ),
+                          );
+                        }
+                      },
+                child: authProvider.state.isLoading
+                    ? const SizedBox(
+                        width: 16,
+                        height: 16,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Text('Update'),
+              );
+            },
           ),
         ],
       ),

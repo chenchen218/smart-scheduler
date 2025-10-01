@@ -6,6 +6,7 @@ import 'screens/calendar/calendar_screen.dart';
 import 'screens/profile/profile_screen.dart';
 import 'screens/auth/signin_screen.dart';
 import 'providers/auth_provider.dart';
+import 'providers/settings_provider.dart';
 import 'theme/app_theme.dart';
 import 'firebase_options.dart';
 
@@ -21,13 +22,26 @@ class MiniTodoApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MultiProvider(
-      providers: [ChangeNotifierProvider(create: (_) => AuthProvider())],
-      child: MaterialApp(
-        debugShowCheckedModeBanner: false,
-        title: 'Mini To-Do App',
-        theme: AppTheme.lightTheme,
-        darkTheme: AppTheme.darkTheme,
-        home: const AuthWrapper(),
+      providers: [
+        ChangeNotifierProvider(create: (_) => AuthProvider()),
+        ChangeNotifierProvider(create: (_) => SettingsProvider()),
+      ],
+      child: Consumer<SettingsProvider>(
+        builder: (context, settingsProvider, child) {
+          // Initialize settings on first build
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            settingsProvider.initializeSettings();
+          });
+
+          return MaterialApp(
+            debugShowCheckedModeBanner: false,
+            title: 'Mini To-Do App',
+            theme: AppTheme.lightTheme,
+            darkTheme: AppTheme.darkTheme,
+            themeMode: settingsProvider.themeModeForApp,
+            home: const AuthWrapper(),
+          );
+        },
       ),
     );
   }
