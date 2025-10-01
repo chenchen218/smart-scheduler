@@ -199,6 +199,7 @@ class AuthProvider with ChangeNotifier {
     String? displayName,
     String? photoURL,
   }) async {
+    print('AuthProvider: Updating user profile...');
     _setState(_state.copyWith(isLoading: true, error: null));
 
     try {
@@ -207,13 +208,23 @@ class AuthProvider with ChangeNotifier {
         photoURL: photoURL,
       );
 
-      // Refresh user data
-      _user = _authService.getCurrentUserModel();
+      // Update local user model
       if (_user != null) {
+        _user = UserModel(
+          uid: _user!.uid,
+          email: _user!.email,
+          displayName: displayName ?? _user!.displayName,
+          photoURL: photoURL ?? _user!.photoURL,
+          isEmailVerified: _user!.isEmailVerified,
+          createdAt: _user!.createdAt,
+        );
         _setState(AuthState().authenticated(_user!));
       }
+
+      print('AuthProvider: Profile updated successfully');
       return true;
     } catch (e) {
+      print('AuthProvider: Profile update error: $e');
       _setState(AuthState().errorState(e.toString()));
       return false;
     }
@@ -221,13 +232,15 @@ class AuthProvider with ChangeNotifier {
 
   /// Update password
   Future<bool> updatePassword(String newPassword) async {
+    print('AuthProvider: Updating password...');
     _setState(_state.copyWith(isLoading: true, error: null));
 
     try {
       await _authService.updatePassword(newPassword);
-      _setState(_state.copyWith(isLoading: false));
+      print('AuthProvider: Password updated successfully');
       return true;
     } catch (e) {
+      print('AuthProvider: Password update error: $e');
       _setState(AuthState().errorState(e.toString()));
       return false;
     }
