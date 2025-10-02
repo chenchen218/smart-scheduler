@@ -1,0 +1,30 @@
+#!/bin/bash
+
+# Simple Firebase Storage Setup Script
+# This script helps you set up Firebase Storage without domain verification issues
+
+echo "🚀 Firebase Storage Setup Guide"
+echo "================================"
+echo ""
+echo "Since bucket creation requires domain verification, here's the recommended approach:"
+echo ""
+echo "1. 📱 Use Firebase Console (Easiest):"
+echo "   - Go to: https://console.firebase.google.com/"
+echo "   - Select project: to-do-list-2b175"
+echo "   - Click 'Storage' → 'Get started'"
+echo "   - Choose 'Start in production mode'"
+echo "   - Select location (e.g., us-central1)"
+echo "   - Click 'Done'"
+echo ""
+echo "2. 🔧 Update Storage Rules:"
+echo "   - In Firebase Console → Storage → Rules"
+echo "   - Replace with the rules from storage.rules file"
+echo "   - Click 'Publish'"
+echo ""
+echo "3. 🧪 Test Your App:"
+echo "   - Run: ./setup_env.sh"
+echo "   - Try uploading a profile picture"
+echo ""
+echo "The bucket will be automatically created as: to-do-list-2b175.appspot.com"
+echo ""
+echo "✅ No domain verification needed with Firebase Console approach!"

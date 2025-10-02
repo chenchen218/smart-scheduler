@@ -1,10 +1,12 @@
 import 'dart:io';
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/settings_provider.dart';
 import '../../services/image_upload_service.dart';
+import '../../main.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
@@ -616,10 +618,15 @@ class ProfileScreen extends StatelessWidget {
           print('ProfileScreen: Read ${bytes.length} bytes from blob');
 
           // For web, upload bytes directly without creating a file
-          // Use a microtask to ensure context is still valid
-          await Future.microtask(
-            () => _uploadProfilePictureFromBytes(context, bytes, image.name),
-          );
+          // Use global navigator key for stable context access
+          final globalContext = MiniTodoApp.navigatorKey.currentContext;
+          if (globalContext != null) {
+            _uploadProfilePictureFromBytes(globalContext, bytes, image.name);
+          } else {
+            print(
+              'ProfileScreen: Global context not available, aborting upload',
+            );
+          }
         } else {
           print('ProfileScreen: Regular file path, creating File object...');
           final imageFile = File(image.path);

@@ -1,0 +1,19 @@
+[
+  {
+    "origin": [
+      "http://localhost:*",
+      "https://localhost:*",
+      "http://127.0.0.1:*",
+      "https://127.0.0.1:*"
+    ],
+    "method": ["GET", "PUT", "POST", "DELETE", "OPTIONS"],
+    "responseHeader": [
+      "Content-Type",
+      "Authorization",
+      "X-Requested-With",
+      "Accept",
+      "Origin"
+    ],
+    "maxAgeSeconds": 3600
+  }
+]
