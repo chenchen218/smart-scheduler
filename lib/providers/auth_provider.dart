@@ -200,6 +200,7 @@ class AuthProvider with ChangeNotifier {
     String? photoURL,
   }) async {
     print('AuthProvider: Updating user profile...');
+    print('AuthProvider: displayName: $displayName, photoURL: $photoURL');
     _setState(_state.copyWith(isLoading: true, error: null));
 
     try {
@@ -210,15 +211,20 @@ class AuthProvider with ChangeNotifier {
 
       // Update local user model
       if (_user != null) {
+        final newPhotoURL = photoURL != null ? photoURL : _user!.photoURL;
+        print('AuthProvider: Setting photoURL to: $newPhotoURL');
         _user = UserModel(
           uid: _user!.uid,
           email: _user!.email,
           displayName: displayName ?? _user!.displayName,
-          photoURL: photoURL ?? _user!.photoURL,
+          photoURL: newPhotoURL,
           isEmailVerified: _user!.isEmailVerified,
           createdAt: _user!.createdAt,
         );
         _setState(AuthState().authenticated(_user!));
+        print(
+          'AuthProvider: User model updated with photoURL: ${_user!.photoURL}',
+        );
       }
 
       print('AuthProvider: Profile updated successfully');

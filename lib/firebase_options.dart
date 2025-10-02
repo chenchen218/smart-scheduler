@@ -51,7 +51,7 @@ class DefaultFirebaseOptions {
     authDomain:
         '${const String.fromEnvironment('FIREBASE_PROJECT_ID')}.firebaseapp.com',
     storageBucket:
-        '${const String.fromEnvironment('FIREBASE_PROJECT_ID')}.appspot.com',
+        '${const String.fromEnvironment('FIREBASE_PROJECT_ID')}.firebasestorage.app',
   );
 
   static FirebaseOptions get android => FirebaseOptions(

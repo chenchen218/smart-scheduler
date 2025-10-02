@@ -1,7 +1,12 @@
+import 'dart:io';
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:image_picker/image_picker.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/settings_provider.dart';
+import '../../services/image_upload_service.dart';
+import '../../main.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
@@ -57,20 +62,60 @@ class ProfileScreen extends StatelessWidget {
       ),
       child: Column(
         children: [
-          // Profile Picture
-          CircleAvatar(
-            radius: 50,
-            backgroundColor: Theme.of(context).colorScheme.primary,
-            child: Text(
-              user.displayName?.isNotEmpty == true
-                  ? user.displayName![0].toUpperCase()
-                  : user.email[0].toUpperCase(),
-              style: TextStyle(
-                fontSize: 32,
-                fontWeight: FontWeight.bold,
-                color: Theme.of(context).colorScheme.onPrimary,
+          // Profile Picture with Edit Button
+          Stack(
+            children: [
+              Consumer<AuthProvider>(
+                builder: (context, authProvider, child) {
+                  print(
+                    'ProfileScreen: Building CircleAvatar with photoURL: ${user.photoURL}',
+                  );
+                  return CircleAvatar(
+                    radius: 50,
+                    backgroundColor: Theme.of(context).colorScheme.primary,
+                    backgroundImage:
+                        user.photoURL != null && user.photoURL!.isNotEmpty
+                        ? NetworkImage(user.photoURL!)
+                        : null,
+                    child: user.photoURL == null || user.photoURL!.isEmpty
+                        ? Text(
+                            user.displayName?.isNotEmpty == true
+                                ? user.displayName![0].toUpperCase()
+                                : user.email[0].toUpperCase(),
+                            style: TextStyle(
+                              fontSize: 32,
+                              fontWeight: FontWeight.bold,
+                              color: Theme.of(context).colorScheme.onPrimary,
+                            ),
+                          )
+                        : null,
+                  );
+                },
               ),
-            ),
+              Positioned(
+                bottom: 0,
+                right: 0,
+                child: GestureDetector(
+                  onTap: () => _showImagePickerDialog(context),
+                  child: Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).colorScheme.primary,
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: Theme.of(context).colorScheme.surface,
+                        width: 2,
+                      ),
+                    ),
+                    child: Icon(
+                      Icons.camera_alt,
+                      size: 20,
+                      color: Theme.of(context).colorScheme.onPrimary,
+                    ),
+                  ),
+                ),
+              ),
+            ],
           ),
           const SizedBox(height: 16),
 
@@ -434,5 +479,450 @@ class ProfileScreen extends StatelessWidget {
   String _formatDate(DateTime? date) {
     if (date == null) return 'Unknown';
     return '${date.day}/${date.month}/${date.year}';
+  }
+
+  void _showImagePickerDialog(BuildContext context) {
+    print('ProfileScreen: Showing image picker dialog...');
+
+    showModalBottomSheet(
+      context: context,
+      builder: (context) => Container(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              'Select Profile Picture',
+              style: Theme.of(
+                context,
+              ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 20),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                _buildImagePickerOption(
+                  context,
+                  icon: Icons.camera_alt,
+                  label: 'Camera',
+                  onTap: () {
+                    print('ProfileScreen: Camera option selected');
+                    Navigator.pop(context);
+                    _pickImage(context, ImageSource.camera);
+                  },
+                ),
+                _buildImagePickerOption(
+                  context,
+                  icon: Icons.photo_library,
+                  label: 'Gallery',
+                  onTap: () {
+                    print('ProfileScreen: Gallery option selected');
+                    Navigator.pop(context);
+                    _pickImage(context, ImageSource.gallery);
+                  },
+                ),
+                Consumer<AuthProvider>(
+                  builder: (context, authProvider, child) {
+                    final canRemove = authProvider.user?.photoURL != null;
+                    print('ProfileScreen: Remove option available: $canRemove');
+                    return _buildImagePickerOption(
+                      context,
+                      icon: Icons.delete,
+                      label: 'Remove',
+                      onTap: canRemove
+                          ? () {
+                              print('ProfileScreen: Remove option selected');
+                              Navigator.pop(context);
+                              _removeProfilePicture(context);
+                            }
+                          : null,
+                    );
+                  },
+                ),
+              ],
+            ),
+            const SizedBox(height: 20),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildImagePickerOption(
+    BuildContext context, {
+    required IconData icon,
+    required String label,
+    required VoidCallback? onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: onTap != null
+              ? Theme.of(context).colorScheme.primaryContainer
+              : Theme.of(context).colorScheme.surfaceVariant,
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Column(
+          children: [
+            Icon(
+              icon,
+              size: 32,
+              color: onTap != null
+                  ? Theme.of(context).colorScheme.primary
+                  : Theme.of(context).colorScheme.onSurfaceVariant,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              label,
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                color: onTap != null
+                    ? Theme.of(context).colorScheme.onPrimaryContainer
+                    : Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _pickImage(BuildContext context, ImageSource source) async {
+    print('ProfileScreen: Starting image picker...');
+    print('ProfileScreen: Image source: $source');
+
+    try {
+      final ImagePicker picker = ImagePicker();
+      print(
+        'ProfileScreen: Picking image with max dimensions 512x512, quality 85%...',
+      );
+
+      final XFile? image = await picker.pickImage(
+        source: source,
+        maxWidth: 512,
+        maxHeight: 512,
+        imageQuality: 85,
+      );
+
+      if (image != null) {
+        print('ProfileScreen: Image selected successfully!');
+        print('ProfileScreen: Image path: ${image.path}');
+        print('ProfileScreen: Image name: ${image.name}');
+        print('ProfileScreen: Image size: ${await image.length()} bytes');
+
+        // Handle web blob URLs differently
+        if (image.path.startsWith('blob:')) {
+          print('ProfileScreen: Web blob URL detected, reading bytes...');
+          final bytes = await image.readAsBytes();
+          print('ProfileScreen: Read ${bytes.length} bytes from blob');
+
+          // For web, upload bytes directly without creating a file
+          // Use global navigator key for stable context access
+          final globalContext = MiniTodoApp.navigatorKey.currentContext;
+          if (globalContext != null) {
+            _uploadProfilePictureFromBytes(globalContext, bytes, image.name);
+          } else {
+            print(
+              'ProfileScreen: Global context not available, aborting upload',
+            );
+          }
+        } else {
+          print('ProfileScreen: Regular file path, creating File object...');
+          final imageFile = File(image.path);
+          print('ProfileScreen: File exists: ${await imageFile.exists()}');
+          print('ProfileScreen: File size: ${await imageFile.length()} bytes');
+
+          await _uploadProfilePicture(context, imageFile);
+        }
+      } else {
+        print('ProfileScreen: No image selected (user cancelled)');
+      }
+    } catch (e) {
+      print('ProfileScreen: Error in image picker: $e');
+      print('ProfileScreen: Error type: ${e.runtimeType}');
+
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error picking image: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _uploadProfilePictureFromBytes(
+    BuildContext context,
+    List<int> bytes,
+    String fileName,
+  ) async {
+    print('ProfileScreen: Starting profile picture upload from bytes...');
+    print('ProfileScreen: Bytes length: ${bytes.length}');
+    print('ProfileScreen: File name: $fileName');
+    print('ProfileScreen: Context mounted: ${context.mounted}');
+
+    if (!context.mounted) {
+      print('ProfileScreen: Context is not mounted, aborting upload');
+      return;
+    }
+
+    try {
+      // Show loading dialog
+      print('ProfileScreen: Showing loading dialog...');
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => const Center(child: CircularProgressIndicator()),
+      );
+
+      print('ProfileScreen: Creating ImageUploadService...');
+      final ImageUploadService uploadService = ImageUploadService();
+
+      print('ProfileScreen: Starting Firebase upload from bytes...');
+      final String imageUrl = await uploadService.uploadProfilePictureFromBytes(
+        bytes,
+        fileName,
+      );
+      print('ProfileScreen: Firebase upload completed. URL: $imageUrl');
+
+      // Check context before proceeding
+      if (!context.mounted) {
+        print('ProfileScreen: Context not mounted after upload, aborting');
+        return;
+      }
+
+      // Update user profile with new photo URL
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      print(
+        'ProfileScreen: Current user before update: ${authProvider.user?.email}',
+      );
+      print(
+        'ProfileScreen: Current photoURL before update: ${authProvider.user?.photoURL}',
+      );
+      print('ProfileScreen: Updating user profile with photo URL: $imageUrl');
+
+      final success = await authProvider.updateUserProfile(photoURL: imageUrl);
+      print('ProfileScreen: Profile update success: $success');
+
+      // Check the updated user data
+      final updatedUser = authProvider.user;
+      print('ProfileScreen: Updated user email: ${updatedUser?.email}');
+      print('ProfileScreen: Updated user photoURL: ${updatedUser?.photoURL}');
+      print(
+        'ProfileScreen: Updated user displayName: ${updatedUser?.displayName}',
+      );
+
+      // Close loading dialog safely
+      print('ProfileScreen: Closing loading dialog...');
+      if (context.mounted && Navigator.canPop(context)) {
+        Navigator.pop(context);
+      }
+
+      if (success) {
+        print('ProfileScreen: Upload successful, showing success message...');
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Profile picture updated successfully!'),
+              backgroundColor: Colors.green,
+            ),
+          );
+        }
+      } else {
+        print('ProfileScreen: Upload failed, showing error message...');
+        print('ProfileScreen: AuthProvider error: ${authProvider.state.error}');
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                'Failed to update profile: ${authProvider.state.error}',
+              ),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      print('ProfileScreen: Exception during upload: $e');
+      print('ProfileScreen: Exception type: ${e.runtimeType}');
+
+      // Close loading dialog safely
+      if (Navigator.canPop(context)) {
+        Navigator.pop(context);
+      }
+
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error uploading image: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _uploadProfilePicture(
+    BuildContext context,
+    File imageFile,
+  ) async {
+    print('ProfileScreen: Starting profile picture upload...');
+    print('ProfileScreen: Image file path: ${imageFile.path}');
+    print('ProfileScreen: Image file size: ${await imageFile.length()} bytes');
+
+    try {
+      // Show loading dialog
+      print('ProfileScreen: Showing loading dialog...');
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => const Center(child: CircularProgressIndicator()),
+      );
+
+      print('ProfileScreen: Creating ImageUploadService...');
+      final ImageUploadService uploadService = ImageUploadService();
+
+      print('ProfileScreen: Starting Firebase upload...');
+      final String imageUrl = await uploadService.uploadProfilePicture(
+        imageFile,
+      );
+      print('ProfileScreen: Firebase upload completed. URL: $imageUrl');
+
+      // Update user profile with new photo URL
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      print(
+        'ProfileScreen: Current user before update: ${authProvider.user?.email}',
+      );
+      print(
+        'ProfileScreen: Current photoURL before update: ${authProvider.user?.photoURL}',
+      );
+      print('ProfileScreen: Updating user profile with photo URL: $imageUrl');
+
+      final success = await authProvider.updateUserProfile(photoURL: imageUrl);
+      print('ProfileScreen: Profile update success: $success');
+
+      // Check the updated user data
+      final updatedUser = authProvider.user;
+      print('ProfileScreen: Updated user email: ${updatedUser?.email}');
+      print('ProfileScreen: Updated user photoURL: ${updatedUser?.photoURL}');
+      print(
+        'ProfileScreen: Updated user displayName: ${updatedUser?.displayName}',
+      );
+
+      // Close loading dialog safely
+      print('ProfileScreen: Closing loading dialog...');
+      if (Navigator.canPop(context)) {
+        Navigator.pop(context);
+      }
+
+      if (success) {
+        print('ProfileScreen: Upload successful, showing success message...');
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Profile picture updated successfully!'),
+              backgroundColor: Colors.green,
+            ),
+          );
+        }
+      } else {
+        print('ProfileScreen: Upload failed, showing error message...');
+        print('ProfileScreen: AuthProvider error: ${authProvider.state.error}');
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                'Failed to update profile: ${authProvider.state.error}',
+              ),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      print('ProfileScreen: Exception during upload: $e');
+      print('ProfileScreen: Exception type: ${e.runtimeType}');
+
+      // Close loading dialog safely
+      if (Navigator.canPop(context)) {
+        Navigator.pop(context);
+      }
+
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error uploading image: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _removeProfilePicture(BuildContext context) async {
+    try {
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      final user = authProvider.user;
+
+      if (user?.photoURL != null) {
+        // Show loading dialog
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (context) =>
+              const Center(child: CircularProgressIndicator()),
+        );
+
+        // Delete from Firebase Storage
+        final ImageUploadService uploadService = ImageUploadService();
+        await uploadService.deleteProfilePicture(user!.photoURL!);
+
+        // Update user profile to remove photo URL
+        final success = await authProvider.updateUserProfile(photoURL: '');
+
+        // Close loading dialog safely
+        if (Navigator.canPop(context)) {
+          Navigator.pop(context);
+        }
+
+        if (success) {
+          if (context.mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Profile picture removed successfully!'),
+                backgroundColor: Colors.green,
+              ),
+            );
+          }
+        } else {
+          if (context.mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(
+                  'Failed to remove profile picture: ${authProvider.state.error}',
+                ),
+                backgroundColor: Colors.red,
+              ),
+            );
+          }
+        }
+      }
+    } catch (e) {
+      // Close loading dialog safely
+      if (Navigator.canPop(context)) {
+        Navigator.pop(context);
+      }
+
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error removing profile picture: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
   }
 }

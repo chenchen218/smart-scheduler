@@ -1,0 +1,33 @@
+#!/bin/bash
+
+# Manual CORS Setup for Firebase Storage
+# This script provides instructions for setting up CORS via Firebase Console
+
+echo "🔧 Firebase Storage CORS Setup"
+echo "==============================="
+echo ""
+echo "Since gcloud authentication is complex, here's the manual approach:"
+echo ""
+echo "1. 📱 Go to Firebase Console:"
+echo "   https://console.firebase.google.com/"
+echo ""
+echo "2. 🎯 Select your project: to-do-list-2b175"
+echo ""
+echo "3. 🗄️ Go to Storage → Rules"
+echo ""
+echo "4. 📝 Update Storage Rules with:"
+echo "   rules_version = '2';"
+echo "   service firebase.storage {"
+echo "     match /b/{bucket}/o {"
+echo "       match /{allPaths=**} {"
+echo "         allow read, write: if request.auth != null;"
+echo "       }"
+echo "     }"
+echo "   }"
+echo ""
+echo "5. 🚀 Click 'Publish'"
+echo ""
+echo "6. 🔄 Restart your Flutter app:"
+echo "   ./setup_env.sh"
+echo ""
+echo "✅ This should resolve the CORS error!"

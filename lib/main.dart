@@ -19,6 +19,10 @@ void main() async {
 class MiniTodoApp extends StatelessWidget {
   const MiniTodoApp({super.key});
 
+  // Global navigator key for stable context access
+  static final GlobalKey<NavigatorState> navigatorKey =
+      GlobalKey<NavigatorState>();
+
   @override
   Widget build(BuildContext context) {
     return MultiProvider(
@@ -34,6 +38,7 @@ class MiniTodoApp extends StatelessWidget {
           });
 
           return MaterialApp(
+            navigatorKey: navigatorKey,
             debugShowCheckedModeBanner: false,
             title: 'Mini To-Do App',
             theme: AppTheme.lightTheme,

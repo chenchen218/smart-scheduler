@@ -47,6 +47,10 @@ dependencies:
   flutter_tts: ^3.8.5 # text-to-speech
   permission_handler: ^11.2.0 # microphone permissions
 
+  # Image and File Handling
+  image_picker: ^1.0.4 # image selection from gallery/camera
+  path: ^1.8.3 # path manipulation utilities
+
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.8
