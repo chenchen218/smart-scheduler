@@ -1,6 +1,6 @@
 # SmartScheduler 🚀
 
-A modern, AI-powered Flutter application for intelligent task and event management with voice-to-text capabilities and smart scheduling suggestions.
+A modern, AI-powered Flutter application for intelligent task and event management with voice-to-text capabilities, smart scheduling suggestions, and complete user authentication system.
 
 ## ✨ Features
 
@@ -11,6 +11,17 @@ A modern, AI-powered Flutter application for intelligent task and event manageme
 - **Event Creation**: Rich event creation with priority, location, and tags
 - **Smart Scheduling**: AI-powered scheduling suggestions
 - **Voice Input**: Speech-to-text for hands-free event creation
+- **User Authentication**: Complete sign-in/sign-up system with Firebase
+- **Profile Management**: User profiles with photo upload and settings
+- **User Isolation**: Each user sees only their own data
+
+### 🔐 Authentication & Security
+
+- **Firebase Authentication**: Email/password and Google Sign-In
+- **User Profiles**: Profile pictures, name editing, password changes
+- **Secure Storage**: User-specific data isolation
+- **Environment Variables**: Secure credential management
+- **Mock Authentication**: Development mode for testing
 
 ### 🤖 AI Features
 
@@ -22,9 +33,10 @@ A modern, AI-powered Flutter application for intelligent task and event manageme
 ### 🎨 Modern UI/UX
 
 - **Material 3 Design**: Latest Material Design principles
-- **Dark/Light Theme**: Automatic theme switching
+- **Dark/Light Theme**: Automatic theme switching with user preferences
 - **Smooth Animations**: Optimized performance with modular architecture
 - **Responsive Design**: Works on mobile, tablet, and web
+- **Profile Interface**: Modern profile management with image upload
 
 ## 🏗️ Architecture
 
@@ -34,17 +46,36 @@ The app follows a clean, modular architecture with separation of concerns:
 
 ```
 lib/
-├── main.dart                     # App entry point
+├── main.dart                     # App entry point with Firebase initialization
+├── firebase_options.dart        # Firebase configuration (environment variables)
 ├── theme/
 │   └── app_theme.dart           # Centralized theming
 ├── models/
 │   ├── task.dart                # Task data model
-│   └── calendar_event.dart      # Event data model
+│   ├── calendar_event.dart      # Event data model
+│   ├── user_model.dart          # User data model
+│   └── auth_state.dart          # Authentication state model
+├── providers/
+│   ├── auth_provider.dart       # Authentication state management
+│   └── settings_provider.dart   # User settings management
+├── services/
+│   ├── auth_service.dart        # Firebase authentication service
+│   ├── mock_auth_service.dart   # Mock authentication for development
+│   ├── image_upload_service.dart # Firebase Storage image upload
+│   └── settings_service.dart    # User settings persistence
+├── config/
+│   └── auth_config.dart         # Authentication configuration
 ├── service/
 │   ├── calendar_service.dart    # Event CRUD operations
 │   ├── local_storage_service.dart # Local data persistence
 │   └── ai_service.dart         # AI features (voice, scheduling)
 ├── screens/
+│   ├── auth/                    # Authentication screens
+│   │   ├── signin_screen.dart
+│   │   ├── signup_screen.dart
+│   │   └── forgot_password_screen.dart
+│   ├── profile/                # Profile management
+│   │   └── profile_screen.dart
 │   ├── home/                    # Home screen module
 │   │   ├── home_screen.dart
 │   │   ├── controllers/
@@ -81,6 +112,8 @@ lib/
 - **Provider Pattern**: State management with ChangeNotifier
 - **Widget Composition**: Reusable, focused components
 - **Service Layer**: Clean separation of data operations
+- **Authentication Flow**: Secure user authentication with Firebase
+- **User Isolation**: Per-user data storage and management
 
 ## 🚀 Getting Started
 
@@ -109,17 +142,19 @@ lib/
 
 3. **Firebase Setup**
 
-   The app uses Firebase for authentication. You have two options:
+   The app uses Firebase for authentication and storage. You have two options:
 
    #### Option A: Use Your Own Firebase Project (Recommended)
 
    1. **Create a Firebase project** at [Firebase Console](https://console.firebase.google.com)
    2. **Enable Authentication** with Email/Password and Google Sign-In
-   3. **Copy the template** and add your credentials:
+   3. **Enable Storage** for profile picture uploads
+   4. **Configure Storage Rules** to allow authenticated users to upload
+   5. **Copy the template** and add your credentials:
       ```bash
       cp setup_env.sh.template setup_env.sh
       ```
-   4. **Edit `setup_env.sh`** with your Firebase project credentials:
+   6. **Edit `setup_env.sh`** with your Firebase project credentials:
       - `FIREBASE_PROJECT_ID`: Your Firebase project ID
       - `FIREBASE_WEB_API_KEY`: Your web API key
       - `FIREBASE_WEB_APP_ID`: Your web app ID
@@ -128,6 +163,7 @@ lib/
    #### Option B: Use Mock Authentication (Development)
 
    The app includes mock authentication for development. No Firebase setup required.
+   Set `useMockAuth = true` in `lib/config/auth_config.dart` for development.
 
 4. **Run the application**
 
@@ -190,16 +226,20 @@ dependencies:
   # Data & Storage
   shared_preferences: ^2.2.2
 
-  # Firebase Authentication
+  # Firebase Authentication & Storage
   firebase_core: ^2.24.2
   firebase_auth: ^4.15.3
-  google_sign_in: ^6.1.6
   firebase_storage: ^11.5.6
+  google_sign_in: ^6.1.6
 
   # AI & Voice Features
   speech_to_text: ^6.6.0
   flutter_tts: ^3.8.5
   permission_handler: ^11.2.0
+
+  # Image & File Handling
+  image_picker: ^1.0.4
+  path: ^1.8.3
 
   # Utilities
   intl: ^0.19.0
@@ -218,9 +258,10 @@ dependencies:
 ### Design System
 
 - **Material 3**: Latest design guidelines
-- **Dynamic Theming**: Light/dark mode support
+- **Dynamic Theming**: Light/dark mode support with user preferences
 - **Responsive Layout**: Adapts to different screen sizes
 - **Accessibility**: Screen reader support, high contrast
+- **Profile Interface**: Modern profile management with image upload
 
 ### Animations & Interactions
 
@@ -228,6 +269,26 @@ dependencies:
 - **Gesture Support**: Swipe-to-delete, pull-to-refresh
 - **Micro-interactions**: Button feedback, loading states
 - **List Animations**: Dynamic insertions/removals
+- **Image Upload**: Drag-and-drop profile picture upload
+- **Settings Toggle**: Smooth theme and notification toggles
+
+## 👤 User Management Features
+
+### Profile Management
+
+- **Profile Pictures**: Upload, edit, and remove profile photos
+- **Name Editing**: In-app display name updates
+- **Password Changes**: Secure password updates with validation
+- **Settings Persistence**: User preferences saved locally
+- **Theme Management**: Light/dark mode with system preference
+
+### Authentication Flow
+
+- **Sign In/Sign Up**: Email/password and Google authentication
+- **Password Recovery**: Email-based password reset
+- **User Isolation**: Each user sees only their own data
+- **Session Management**: Automatic login state persistence
+- **Mock Authentication**: Development mode for testing
 
 ## 🔧 Configuration
 
@@ -324,7 +385,7 @@ flutter build ios --release
 - Add comments for complex logic
 - Maintain consistent formatting
 
-## 🔐 Authentication
+## 🔐 Authentication & User Management
 
 ### Firebase Authentication
 
@@ -333,6 +394,15 @@ The app supports multiple authentication methods:
 - **Email/Password**: Traditional email-based authentication
 - **Google Sign-In**: One-click Google authentication
 - **Mock Authentication**: Development mode for testing
+- **Password Reset**: Email-based password recovery
+
+### User Profile Features
+
+- **Profile Pictures**: Upload and manage profile photos
+- **Name Editing**: Update display name
+- **Password Changes**: Secure password updates
+- **Settings Management**: User preferences and theme settings
+- **Account Management**: Sign out and account deletion
 
 ### Security Features
 
@@ -340,6 +410,8 @@ The app supports multiple authentication methods:
 - **User Isolation**: Each user's data is completely separate
 - **Secure Storage**: Local data encrypted per user
 - **No Hardcoded Secrets**: All credentials use environment variables
+- **CORS Configuration**: Proper cross-origin setup for web uploads
+- **Firebase Storage Rules**: Secure file upload permissions
 
 ## 📈 Roadmap
 
@@ -347,11 +419,14 @@ The app supports multiple authentication methods:
 
 - [x] **Firebase Integration**: Authentication and user management
 - [x] **User Isolation**: Secure per-user data storage
+- [x] **Profile Management**: User profiles with photo upload
+- [x] **Settings Management**: User preferences and theme settings
 - [ ] **Cloud Sync**: Real-time data synchronization
 - [ ] **Team Collaboration**: Shared calendars and tasks
 - [ ] **Advanced AI**: Machine learning for better scheduling
 - [ ] **Offline Support**: Full offline functionality
 - [ ] **Widgets**: Home screen widgets for quick access
+- [ ] **Push Notifications**: Event reminders and updates
 
 ### Performance Improvements
 
@@ -369,6 +444,8 @@ The app supports multiple authentication methods:
 - **Invalid API Key**: Ensure your Firebase credentials are correct in `setup_env.sh`
 - **Google Sign-In Not Working**: Check that Google Sign-In is enabled in Firebase Console
 - **Environment Variables Not Loading**: Verify you're using `./setup_env.sh` to run the app
+- **Profile Picture Upload Fails**: Check Firebase Storage rules and CORS configuration
+- **Storage Rules Error**: Update Firebase Storage rules to allow authenticated users
 
 #### Voice Input Not Working
 
@@ -393,6 +470,8 @@ The app supports multiple authentication methods:
 - **Script not executable**: Run `chmod +x setup_env.sh`
 - **Template not found**: Copy `setup_env.sh.template` to `setup_env.sh`
 - **Credentials missing**: Check that all Firebase environment variables are set
+- **CORS errors**: Ensure Firebase Storage CORS is configured for your domain
+- **Storage bucket mismatch**: Verify bucket name uses `.firebasestorage.app` not `.appspot.com`
 
 ## 📄 License
 
