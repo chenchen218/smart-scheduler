@@ -18,7 +18,10 @@ class AuthService {
   /// Get GoogleSignIn instance (lazy initialization)
   GoogleSignIn get _googleSignInInstance {
     if (_googleSignIn == null) {
-      _googleSignIn = GoogleSignIn();
+      _googleSignIn = GoogleSignIn(
+        clientId:
+            '796545909849-d14htdi0bdehcljan5usm5lf4f7o4ah9.apps.googleusercontent.com',
+      );
     }
     return _googleSignIn!;
   }
@@ -104,9 +107,14 @@ class AuthService {
     }
 
     try {
-      // Trigger the authentication flow
-      final GoogleSignInAccount? googleUser = await _googleSignInInstance
-          .signIn();
+      // Use signInSilently first to check if user is already signed in
+      GoogleSignInAccount? googleUser = await _googleSignInInstance
+          .signInSilently();
+
+      // If not signed in, trigger the authentication flow
+      if (googleUser == null) {
+        googleUser = await _googleSignInInstance.signIn();
+      }
 
       if (googleUser == null) {
         return null; // User cancelled the sign-in
