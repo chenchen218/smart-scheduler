@@ -17,28 +17,39 @@ class HomeTabNavigation extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
 
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16),
+      margin: const EdgeInsets.symmetric(horizontal: 20),
       decoration: BoxDecoration(
-        color: colorScheme.surfaceContainerHighest.withOpacity(0.3),
+        color: colorScheme.surface,
         borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: colorScheme.outline.withOpacity(0.2),
+          width: 0.5,
+        ),
       ),
       child: TabBar(
         controller: tabController,
         indicator: BoxDecoration(
           color: colorScheme.primary,
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(10),
         ),
-        labelColor: colorScheme.onPrimary,
-        unselectedLabelColor: colorScheme.onSurfaceVariant,
+        indicatorSize: TabBarIndicatorSize.tab,
+        indicatorPadding: const EdgeInsets.all(4),
+        labelColor: Colors.white,
+        unselectedLabelColor: colorScheme.onSurface.withOpacity(0.6),
+        labelStyle: textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600),
+        unselectedLabelStyle: textTheme.bodyMedium?.copyWith(
+          fontWeight: FontWeight.w500,
+        ),
         tabs: [
           Tab(
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(Icons.task_alt_rounded, size: 18),
-                const SizedBox(width: 8),
+                const Icon(Icons.check_circle_outline_rounded, size: 16),
+                const SizedBox(width: 6),
                 Text('Tasks ($taskCount)'),
               ],
             ),
@@ -47,9 +58,9 @@ class HomeTabNavigation extends StatelessWidget {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(Icons.event_rounded, size: 18),
-                const SizedBox(width: 8),
-                Text('Today\'s Events ($eventCount)'),
+                const Icon(Icons.event_outlined, size: 16),
+                const SizedBox(width: 6),
+                Text('Events ($eventCount)'),
               ],
             ),
           ),

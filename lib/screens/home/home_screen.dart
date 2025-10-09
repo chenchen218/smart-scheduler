@@ -92,73 +92,63 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
 
     return Scaffold(
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              colorScheme.primaryContainer.withOpacity(0.3),
-              colorScheme.secondaryContainer.withOpacity(0.2),
-            ],
-          ),
-        ),
-        child: SafeArea(
-          child: Column(
-            children: [
-              // Header section with app title, progress bar, and action buttons
-              HomeHeader(
-                tasks: _controller.tasks,
-                onAddEvent: _onAddEvent,
-                onRefresh: _onRefresh,
-                onDebugAllEvents: _onDebugAllEvents,
-              ),
-              // Main content area with tabbed interface
-              Expanded(
-                child: Column(
-                  children: [
-                    // Tab bar for switching between Tasks and Events
-                    HomeTabNavigation(
-                      tabController: _tabController,
-                      taskCount: _controller.tasks.length,
-                      eventCount: _controller.events.length,
+      backgroundColor: colorScheme.background,
+      body: SafeArea(
+        child: Column(
+          children: [
+            // Header section with app title, progress bar, and action buttons
+            HomeHeader(
+              tasks: _controller.tasks,
+              onAddEvent: _onAddEvent,
+              onRefresh: _onRefresh,
+              onDebugAllEvents: _onDebugAllEvents,
+            ),
+            // Main content area with tabbed interface
+            Expanded(
+              child: Column(
+                children: [
+                  // Tab bar for switching between Tasks and Events
+                  HomeTabNavigation(
+                    tabController: _tabController,
+                    taskCount: _controller.tasks.length,
+                    eventCount: _controller.events.length,
+                  ),
+                  const SizedBox(height: 8),
+                  // Tab content area with dynamic list views
+                  Expanded(
+                    child: TabBarView(
+                      controller: _tabController,
+                      children: [
+                        // First tab: Combined view showing both tasks and events
+                        TaskListWidget(
+                          tasks: _controller.tasks,
+                          events: _controller.events,
+                          buildCombinedItem: _controller.buildCombinedItem,
+                          getCombinedItemCount:
+                              _controller.getCombinedItemCount,
+                          onEditEvent: _onEditEvent,
+                          onDeleteEvent: _controller.deleteEvent,
+                          onToggleEventCompletion:
+                              _controller.toggleEventCompletion,
+                        ),
+                        // Second tab: Dedicated events view with AnimatedList
+                        EventListWidget(
+                          events: _controller.events,
+                          onEditEvent: _onEditEvent,
+                          onDeleteEvent: _controller.deleteEvent,
+                          onToggleEventCompletion:
+                              _controller.toggleEventCompletion,
+                        ),
+                      ],
                     ),
-                    const SizedBox(height: 16),
-                    // Tab content area with dynamic list views
-                    Expanded(
-                      child: TabBarView(
-                        controller: _tabController,
-                        children: [
-                          // First tab: Combined view showing both tasks and events
-                          TaskListWidget(
-                            tasks: _controller.tasks,
-                            events: _controller.events,
-                            buildCombinedItem: _controller.buildCombinedItem,
-                            getCombinedItemCount:
-                                _controller.getCombinedItemCount,
-                            onEditEvent: _onEditEvent,
-                            onDeleteEvent: _controller.deleteEvent,
-                            onToggleEventCompletion:
-                                _controller.toggleEventCompletion,
-                          ),
-                          // Second tab: Dedicated events view with AnimatedList
-                          EventListWidget(
-                            events: _controller.events,
-                            onEditEvent: _onEditEvent,
-                            onDeleteEvent: _controller.deleteEvent,
-                            onToggleEventCompletion:
-                                _controller.toggleEventCompletion,
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
+                  ),
+                ],
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
