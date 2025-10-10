@@ -2,6 +2,10 @@
     <!-- Microphone permission for voice input -->
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
     
+    <!-- Calendar permissions -->
+    <uses-permission android:name="android.permission.READ_CALENDAR" />
+    <uses-permission android:name="android.permission.WRITE_CALENDAR" />
+    
     <application
         android:label="mini_todo_app"
         android:name="${applicationName}"

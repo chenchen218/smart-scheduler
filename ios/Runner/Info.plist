@@ -48,5 +48,9 @@
 	<!-- Microphone permission for voice input -->
 	<key>NSMicrophoneUsageDescription</key>
 	<string>This app needs access to microphone for voice input to create events and tasks.</string>
+	
+	<!-- Calendar permissions -->
+	<key>NSCalendarsUsageDescription</key>
+	<string>This app needs access to your calendar to sync events and help you manage your schedule.</string>
 </dict>
 </plist>

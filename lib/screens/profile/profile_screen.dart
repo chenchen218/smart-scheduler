@@ -7,6 +7,7 @@ import '../../providers/auth_provider.dart';
 import '../../providers/settings_provider.dart';
 import '../../services/image_upload_service.dart';
 import '../../main.dart';
+import '../calendar/calendar_integration_screen.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
@@ -83,9 +84,6 @@ class ProfileScreen extends StatelessWidget {
             children: [
               Consumer<AuthProvider>(
                 builder: (context, authProvider, child) {
-                  print(
-                    'ProfileScreen: Building CircleAvatar with photoURL: ${user.photoURL}',
-                  );
                   return Container(
                     width: 100,
                     height: 100,
@@ -361,6 +359,24 @@ class ProfileScreen extends StatelessWidget {
                 ),
               );
             },
+          ),
+          _buildDivider(context),
+          _buildSettingsTile(
+            context,
+            icon: Icons.calendar_today_outlined,
+            title: 'Calendar Integration',
+            subtitle: 'Connect with your device calendar',
+            trailing: Icon(
+              Icons.arrow_forward_ios_rounded,
+              size: 16,
+              color: colorScheme.onSurface.withOpacity(0.4),
+            ),
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => const CalendarIntegrationScreen(),
+              ),
+            ),
           ),
           _buildDivider(context),
           _buildSettingsTile(

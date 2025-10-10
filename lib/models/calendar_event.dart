@@ -14,6 +14,13 @@ class CalendarEvent {
   final bool isCompleted;
   final String priority;
 
+  // External calendar integration fields
+  final String? source; // 'app', 'device_calendar', 'google_calendar'
+  final String? externalId; // ID from external calendar
+  final String? calendarId; // Calendar ID from external system
+  final DateTime? startDate; // Full start date with time
+  final DateTime? endDate; // Full end date with time
+
   CalendarEvent({
     required this.id,
     required this.title,
@@ -27,6 +34,11 @@ class CalendarEvent {
     this.tags = const [],
     this.isCompleted = false,
     this.priority = 'Medium',
+    this.source = 'app',
+    this.externalId,
+    this.calendarId,
+    this.startDate,
+    this.endDate,
   });
 
   CalendarEvent copyWith({
@@ -42,6 +54,11 @@ class CalendarEvent {
     List<String>? tags,
     bool? isCompleted,
     String? priority,
+    String? source,
+    String? externalId,
+    String? calendarId,
+    DateTime? startDate,
+    DateTime? endDate,
   }) {
     return CalendarEvent(
       id: id ?? this.id,
@@ -56,6 +73,11 @@ class CalendarEvent {
       tags: tags ?? this.tags,
       isCompleted: isCompleted ?? this.isCompleted,
       priority: priority ?? this.priority,
+      source: source ?? this.source,
+      externalId: externalId ?? this.externalId,
+      calendarId: calendarId ?? this.calendarId,
+      startDate: startDate ?? this.startDate,
+      endDate: endDate ?? this.endDate,
     );
   }
 
@@ -85,6 +107,11 @@ class CalendarEvent {
       'tags': tags,
       'isCompleted': isCompleted,
       'priority': priority,
+      'source': source,
+      'externalId': externalId,
+      'calendarId': calendarId,
+      'startDate': startDate?.toIso8601String(),
+      'endDate': endDate?.toIso8601String(),
     };
   }
 
@@ -106,6 +133,13 @@ class CalendarEvent {
       tags: List<String>.from(json['tags'] ?? []),
       isCompleted: json['isCompleted'] ?? false,
       priority: json['priority'] ?? 'Medium',
+      source: json['source'] ?? 'app',
+      externalId: json['externalId'],
+      calendarId: json['calendarId'],
+      startDate: json['startDate'] != null
+          ? DateTime.parse(json['startDate'])
+          : null,
+      endDate: json['endDate'] != null ? DateTime.parse(json['endDate']) : null,
     );
   }
 
