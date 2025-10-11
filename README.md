@@ -1,5 +1,6 @@
 # SmartScheduler 🚀
 
+Developer: Chen
 A modern, AI-powered Flutter application for intelligent task and event management with voice-to-text capabilities, smart scheduling suggestions, and complete user authentication system.
 
 ## ✨ Features
