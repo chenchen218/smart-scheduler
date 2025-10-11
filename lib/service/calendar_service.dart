@@ -1,48 +1,82 @@
 import '../models/calendar_event.dart';
 import 'local_storage_service.dart';
+import '../services/firestore_event_service.dart';
 
 class CalendarService {
   final LocalStorageService _localStorageService = LocalStorageService();
+  final FirestoreEventService _firestoreEventService = FirestoreEventService();
 
-  /// Get all events from local storage
+  /// Get all events from Firebase Firestore
   Future<List<CalendarEvent>> getEvents() async {
     try {
-      return await _localStorageService.getEvents();
+      return await _firestoreEventService.getEvents();
     } catch (e) {
-      print('Error fetching events: $e');
-      return [];
+      print('Error fetching events from Firestore: $e');
+      // Fallback to local storage if Firestore fails
+      try {
+        return await _localStorageService.getEvents();
+      } catch (localError) {
+        print('Error fetching events from local storage: $localError');
+        return [];
+      }
     }
   }
 
-  /// Create a new event in local storage
+  /// Create a new event in Firebase Firestore
   Future<CalendarEvent> createEvent(CalendarEvent event) async {
     try {
+      await _firestoreEventService.createEvent(event);
+      // Also save to local storage as backup
       await _localStorageService.addEvent(event);
       return event;
     } catch (e) {
-      print('Error creating event: $e');
-      rethrow;
+      print('Error creating event in Firestore: $e');
+      // Fallback to local storage only
+      try {
+        await _localStorageService.addEvent(event);
+        return event;
+      } catch (localError) {
+        print('Error creating event in local storage: $localError');
+        rethrow;
+      }
     }
   }
 
-  /// Update an existing event in local storage
+  /// Update an existing event in Firebase Firestore
   Future<CalendarEvent> updateEvent(CalendarEvent event) async {
     try {
+      await _firestoreEventService.updateEvent(event);
+      // Also update local storage as backup
       await _localStorageService.updateEvent(event);
       return event;
     } catch (e) {
-      print('Error updating event: $e');
-      rethrow;
+      print('Error updating event in Firestore: $e');
+      // Fallback to local storage only
+      try {
+        await _localStorageService.updateEvent(event);
+        return event;
+      } catch (localError) {
+        print('Error updating event in local storage: $localError');
+        rethrow;
+      }
     }
   }
 
-  /// Delete an event from local storage
+  /// Delete an event from Firebase Firestore
   Future<void> deleteEvent(String eventId) async {
     try {
+      await _firestoreEventService.deleteEvent(eventId);
+      // Also delete from local storage
       await _localStorageService.deleteEvent(eventId);
     } catch (e) {
-      print('Error deleting event: $e');
-      rethrow;
+      print('Error deleting event from Firestore: $e');
+      // Fallback to local storage only
+      try {
+        await _localStorageService.deleteEvent(eventId);
+      } catch (localError) {
+        print('Error deleting event from local storage: $localError');
+        rethrow;
+      }
     }
   }
 

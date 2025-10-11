@@ -191,6 +191,23 @@ class _CalendarIntegrationScreenState extends State<CalendarIntegrationScreen> {
     }
   }
 
+  Future<void> _clearStoredData() async {
+    try {
+      await _calendarService.clearStoredData();
+      setState(() {
+        _hasPermission = false;
+        _externalEvents = [];
+        _error = null;
+      });
+      print('CalendarIntegrationScreen: Cleared all stored OAuth data');
+    } catch (e) {
+      print('CalendarIntegrationScreen: Error clearing stored data: $e');
+      setState(() {
+        _error = 'Failed to clear stored data: $e';
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
@@ -208,6 +225,11 @@ class _CalendarIntegrationScreenState extends State<CalendarIntegrationScreen> {
         backgroundColor: colorScheme.surface,
         foregroundColor: colorScheme.onSurface,
         actions: [
+          IconButton(
+            onPressed: _clearStoredData,
+            icon: const Icon(Icons.clear_all_rounded),
+            tooltip: 'Clear Stored Data',
+          ),
           IconButton(
             onPressed: _loadAllEvents,
             icon: const Icon(Icons.refresh_rounded),

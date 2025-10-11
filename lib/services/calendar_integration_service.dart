@@ -298,6 +298,17 @@ class CalendarIntegrationService {
     return await _requestPermissions();
   }
 
+  /// Clear stored OAuth/auth data and reset local state
+  Future<void> clearStoredData() async {
+    if (kIsWeb) {
+      await _googleCalendarService.clearStoredData();
+      return;
+    }
+    // Mobile: just reset cached state
+    _hasPermission = false;
+    _calendars = [];
+  }
+
   /// Convert device calendar event to app event model
   CalendarEvent _convertToAppEvent(Event event) {
     final startDate = event.start?.toLocal() ?? DateTime.now();

@@ -4,6 +4,7 @@ import 'dart:math';
 import '../../../models/task.dart';
 import '../../../models/calendar_event.dart';
 import '../../../service/calendar_service.dart';
+import '../../../services/calendar_integration_service.dart';
 import '../../../widgets/task_card.dart';
 import '../../../widgets/event_card.dart';
 
@@ -16,6 +17,8 @@ class HomeController extends ChangeNotifier {
   final GlobalKey<AnimatedListState> eventsListKey = GlobalKey();
   final Random rand = Random();
   final CalendarService calendarService = CalendarService();
+  final CalendarIntegrationService calendarIntegrationService =
+      CalendarIntegrationService();
   Timer? autoTimer;
   Timer? _debounceTimer;
 
@@ -100,20 +103,26 @@ class HomeController extends ChangeNotifier {
     }
   }
 
-  /// Load events from the calendar service
+  /// Load events from the app store and Google Calendar (if available)
   Future<void> loadEvents() async {
     try {
       print('Loading events for today: ${DateTime.now()}');
       final today = DateTime.now();
+      final start = DateTime(today.year, today.month, today.day);
+      final end = DateTime(today.year, today.month, today.day + 7);
       print(
         'Date components: year=${today.year}, month=${today.month}, day=${today.day}',
       );
 
+      // 1) App/Firestore events
       final allEvents = await calendarService.getEvents();
-      print('Found ${allEvents.length} events for today');
+      print('Found ${allEvents.length} total events in storage');
+      print(
+        'All events: ${allEvents.map((e) => '${e.title} (${e.date})').join(', ')}',
+      );
 
-      // Filter events for today
-      final todayEvents = allEvents.where((event) {
+      // Filter app events for today..next 7 days
+      final localWindow = allEvents.where((event) {
         final eventDate = event.date;
         print(
           'Event ${allEvents.indexOf(event)}: ${event.title} - Date: ${event.date}',
@@ -124,16 +133,39 @@ class HomeController extends ChangeNotifier {
         print(
           '  Today date components: year=${today.year}, month=${today.month}, day=${today.day}',
         );
-        final isToday =
-            eventDate.year == today.year &&
-            eventDate.month == today.month &&
-            eventDate.day == today.day;
-        print('  Date match: $isToday');
-        return isToday;
+
+        // Check if event is within the next 7 days
+        final daysDifference = eventDate.difference(start).inDays;
+        final isWithinNextWeek = daysDifference >= 0 && eventDate.isBefore(end);
+
+        print(
+          '  Days difference: $daysDifference, Within next week: $isWithinNextWeek',
+        );
+        return isWithinNextWeek;
       }).toList();
 
-      events.clear();
-      events.addAll(todayEvents);
+      // 2) Google Calendar events (best-effort)
+      List<CalendarEvent> googleEvents = [];
+      try {
+        await calendarIntegrationService.initialize();
+        googleEvents = await calendarIntegrationService.getEventsForDateRange(
+          startDate: start,
+          endDate: end,
+        );
+        print('Loaded ${googleEvents.length} Google events');
+      } catch (e) {
+        print('Google events unavailable (not connected or error): $e');
+      }
+
+      // 3) Merge + sort
+      final merged = [...localWindow, ...googleEvents];
+      merged.sort(
+        (a, b) => (a.startDate ?? a.date).compareTo(b.startDate ?? b.date),
+      );
+
+      events
+        ..clear()
+        ..addAll(merged);
       print('Events updated in UI: ${events.length}');
       notifyListeners();
     } catch (e) {
