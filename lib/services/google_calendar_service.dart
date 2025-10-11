@@ -20,6 +20,16 @@ class GoogleCalendarService {
   static const String _clientId =
       '796545909849-d14htdi0bdehcljan5usm5lf4f7o4ah9.apps.googleusercontent.com';
   static const String _redirectUri = 'http://localhost:3000/oauth2redirect';
+
+  // Get client secret from environment variable
+  static String get _clientSecret {
+    const clientSecret = String.fromEnvironment('GOOGLE_CLIENT_SECRET');
+    if (clientSecret.isEmpty) {
+      throw Exception('GOOGLE_CLIENT_SECRET environment variable is not set');
+    }
+    return clientSecret;
+  }
+
   static const List<String> _scopes = [
     'https://www.googleapis.com/auth/calendar.readonly',
     'https://www.googleapis.com/auth/calendar.events',
@@ -216,6 +226,14 @@ class GoogleCalendarService {
     await _clearStoredCredentials();
   }
 
+  /// Clear all stored OAuth data and start fresh
+  Future<void> clearStoredData() async {
+    await _oauthService.clearCredentials();
+    _authClient?.close();
+    _calendarApi = null;
+    _isAuthenticated = false;
+  }
+
   /// Convert Google Calendar event to app event model
   CalendarEvent _convertGoogleEventToAppEvent(calendar.Event googleEvent) {
     final start = googleEvent.start?.dateTime ?? googleEvent.start?.date;
@@ -283,17 +301,31 @@ class GoogleCalendarService {
         return null;
       }
 
-      final response = await http.post(
-        Uri.parse('https://oauth2.googleapis.com/token'),
-        headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-        body: {
+      final requestBody = Uri(
+        queryParameters: {
           'client_id': _clientId,
           'code': authCode,
           'grant_type': 'authorization_code',
           'redirect_uri': _redirectUri,
           'code_verifier': codeVerifier,
+          'client_secret': _clientSecret,
         },
+      ).query;
+
+      print('Token exchange request body: $requestBody');
+      print('Token exchange URL: https://oauth2.googleapis.com/token');
+      print(
+        'Token exchange headers: Content-Type: application/x-www-form-urlencoded',
       );
+
+      final response = await http.post(
+        Uri.parse('https://oauth2.googleapis.com/token'),
+        headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+        body: requestBody,
+      );
+
+      print('Token exchange response status: ${response.statusCode}');
+      print('Token exchange response body: ${response.body}');
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
@@ -308,7 +340,9 @@ class GoogleCalendarService {
           _scopes,
         );
       } else {
-        print('Token exchange failed: ${response.body}');
+        print(
+          'Token exchange failed with status ${response.statusCode}: ${response.body}',
+        );
         return null;
       }
     } catch (e) {

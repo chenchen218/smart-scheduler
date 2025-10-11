@@ -39,6 +39,7 @@ dependencies:
   # Firebase Authentication
   firebase_core: ^2.24.2 # Firebase core
   firebase_auth: ^4.15.3 # Firebase authentication
+  cloud_firestore: ^4.13.6 # Firebase Firestore database
   google_sign_in: ^6.1.6 # Google Sign-In
   firebase_storage: ^11.5.6 # Firebase storage for profile images
 

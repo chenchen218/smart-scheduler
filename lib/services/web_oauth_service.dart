@@ -160,6 +160,7 @@ class WebOAuthService {
     html.window.localStorage.remove('google_auth_timestamp');
     html.window.localStorage.remove('google_access_token');
     html.window.localStorage.remove('google_refresh_token');
+    html.window.localStorage.remove('pkce_code_verifier');
   }
 
   /// Check if user is authenticated
