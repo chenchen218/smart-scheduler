@@ -7,17 +7,27 @@ import '../../providers/auth_provider.dart';
 import '../../providers/settings_provider.dart';
 import '../../services/image_upload_service.dart';
 import '../../main.dart';
+import '../calendar/calendar_integration_screen.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+
     return Scaffold(
+      backgroundColor: colorScheme.background,
       appBar: AppBar(
-        title: const Text('Profile'),
+        title: Text(
+          'Profile',
+          style: textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w600),
+        ),
         centerTitle: true,
         elevation: 0,
+        backgroundColor: colorScheme.surface,
+        foregroundColor: colorScheme.onSurface,
       ),
       body: Consumer<AuthProvider>(
         builder: (context, authProvider, child) {
@@ -28,12 +38,12 @@ class ProfileScreen extends StatelessWidget {
           }
 
           return SingleChildScrollView(
-            padding: const EdgeInsets.all(16.0),
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
             child: Column(
               children: [
                 // Profile Header
                 _buildProfileHeader(context, user),
-                const SizedBox(height: 24),
+                const SizedBox(height: 32),
 
                 // Profile Information
                 _buildProfileInfo(context, user),
@@ -41,7 +51,7 @@ class ProfileScreen extends StatelessWidget {
 
                 // Settings Section
                 _buildSettingsSection(context, authProvider),
-                const SizedBox(height: 24),
+                const SizedBox(height: 32),
 
                 // Sign Out Button
                 _buildSignOutButton(context, authProvider),
@@ -54,11 +64,18 @@ class ProfileScreen extends StatelessWidget {
   }
 
   Widget _buildProfileHeader(BuildContext context, user) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.primaryContainer,
+        color: colorScheme.surface,
         borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: colorScheme.outline.withOpacity(0.2),
+          width: 0.5,
+        ),
       ),
       child: Column(
         children: [
@@ -67,28 +84,30 @@ class ProfileScreen extends StatelessWidget {
             children: [
               Consumer<AuthProvider>(
                 builder: (context, authProvider, child) {
-                  print(
-                    'ProfileScreen: Building CircleAvatar with photoURL: ${user.photoURL}',
-                  );
-                  return CircleAvatar(
-                    radius: 50,
-                    backgroundColor: Theme.of(context).colorScheme.primary,
-                    backgroundImage:
-                        user.photoURL != null && user.photoURL!.isNotEmpty
-                        ? NetworkImage(user.photoURL!)
-                        : null,
-                    child: user.photoURL == null || user.photoURL!.isEmpty
-                        ? Text(
-                            user.displayName?.isNotEmpty == true
-                                ? user.displayName![0].toUpperCase()
-                                : user.email[0].toUpperCase(),
-                            style: TextStyle(
-                              fontSize: 32,
-                              fontWeight: FontWeight.bold,
-                              color: Theme.of(context).colorScheme.onPrimary,
+                  return Container(
+                    width: 100,
+                    height: 100,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: colorScheme.primary,
+                      border: Border.all(
+                        color: colorScheme.outline.withOpacity(0.2),
+                        width: 2,
+                      ),
+                    ),
+                    child: user.photoURL != null && user.photoURL!.isNotEmpty
+                        ? ClipOval(
+                            child: Image.network(
+                              user.photoURL!,
+                              width: 100,
+                              height: 100,
+                              fit: BoxFit.cover,
+                              errorBuilder: (context, error, stackTrace) {
+                                return _buildInitialsAvatar(context, user);
+                              },
                             ),
                           )
-                        : null,
+                        : _buildInitialsAvatar(context, user),
                   );
                 },
               ),
@@ -98,78 +117,184 @@ class ProfileScreen extends StatelessWidget {
                 child: GestureDetector(
                   onTap: () => _showImagePickerDialog(context),
                   child: Container(
-                    padding: const EdgeInsets.all(8),
+                    width: 32,
+                    height: 32,
                     decoration: BoxDecoration(
-                      color: Theme.of(context).colorScheme.primary,
+                      color: colorScheme.primary,
                       shape: BoxShape.circle,
-                      border: Border.all(
-                        color: Theme.of(context).colorScheme.surface,
-                        width: 2,
-                      ),
+                      border: Border.all(color: colorScheme.surface, width: 2),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.1),
+                          blurRadius: 4,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
                     ),
-                    child: Icon(
-                      Icons.camera_alt,
-                      size: 20,
-                      color: Theme.of(context).colorScheme.onPrimary,
+                    child: const Icon(
+                      Icons.camera_alt_rounded,
+                      size: 16,
+                      color: Colors.white,
                     ),
                   ),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 20),
 
           // User Name
           Text(
             user.displayName ?? 'User',
-            style: Theme.of(
-              context,
-            ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
+            style: textTheme.headlineMedium?.copyWith(
+              fontWeight: FontWeight.w600,
+              color: colorScheme.onSurface,
+            ),
+            textAlign: TextAlign.center,
           ),
-          const SizedBox(height: 4),
+          const SizedBox(height: 8),
 
           // Email
           Text(
             user.email,
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              color: Theme.of(context).colorScheme.onSurfaceVariant,
+            style: textTheme.bodyLarge?.copyWith(
+              color: colorScheme.onSurface.withOpacity(0.6),
             ),
+            textAlign: TextAlign.center,
           ),
         ],
       ),
     );
   }
 
+  Widget _buildInitialsAvatar(BuildContext context, user) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+
+    return Container(
+      width: 100,
+      height: 100,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: colorScheme.primary,
+      ),
+      child: Center(
+        child: Text(
+          user.displayName?.isNotEmpty == true
+              ? user.displayName![0].toUpperCase()
+              : user.email[0].toUpperCase(),
+          style: textTheme.headlineLarge?.copyWith(
+            fontWeight: FontWeight.w600,
+            color: Colors.white,
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _buildProfileInfo(BuildContext context, user) {
-    return Card(
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+
+    return Container(
+      decoration: BoxDecoration(
+        color: colorScheme.surface,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: colorScheme.outline.withOpacity(0.2),
+          width: 0.5,
+        ),
+      ),
       child: Column(
         children: [
-          ListTile(
-            leading: const Icon(Icons.person),
-            title: const Text('Display Name'),
-            subtitle: Text(user.displayName ?? 'Not set'),
-            trailing: const Icon(Icons.edit),
-            onTap: () {
-              _showEditNameDialog(context, user);
-            },
+          _buildInfoTile(
+            context,
+            icon: Icons.person_outline_rounded,
+            title: 'Display Name',
+            subtitle: user.displayName ?? 'Not set',
+            trailing: Icon(
+              Icons.edit_outlined,
+              size: 18,
+              color: colorScheme.onSurface.withOpacity(0.4),
+            ),
+            onTap: () => _showEditNameDialog(context, user),
           ),
-          const Divider(height: 1),
-          ListTile(
-            leading: const Icon(Icons.email),
-            title: const Text('Email'),
-            subtitle: Text(user.email),
-            trailing: user.isEmailVerified
-                ? Icon(Icons.verified, color: Colors.green)
-                : Icon(Icons.warning, color: Colors.orange),
+          _buildDivider(context),
+          _buildInfoTile(
+            context,
+            icon: Icons.email_outlined,
+            title: 'Email',
+            subtitle: user.email,
+            trailing: Icon(
+              user.isEmailVerified
+                  ? Icons.verified_rounded
+                  : Icons.warning_amber_rounded,
+              size: 18,
+              color: user.isEmailVerified
+                  ? colorScheme.secondary
+                  : colorScheme.error,
+            ),
           ),
-          const Divider(height: 1),
-          ListTile(
-            leading: const Icon(Icons.calendar_today),
-            title: const Text('Member Since'),
-            subtitle: Text(_formatDate(user.createdAt)),
+          _buildDivider(context),
+          _buildInfoTile(
+            context,
+            icon: Icons.calendar_today_outlined,
+            title: 'Member Since',
+            subtitle: _formatDate(user.createdAt),
+            trailing: null,
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildInfoTile(
+    BuildContext context, {
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    Widget? trailing,
+    VoidCallback? onTap,
+  }) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+
+    return ListTile(
+      contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+      leading: Container(
+        width: 36,
+        height: 36,
+        decoration: BoxDecoration(
+          color: colorScheme.primary.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(10),
+        ),
+        child: Icon(icon, size: 18, color: colorScheme.primary),
+      ),
+      title: Text(
+        title,
+        style: textTheme.bodyMedium?.copyWith(
+          fontWeight: FontWeight.w500,
+          color: colorScheme.onSurface,
+        ),
+      ),
+      subtitle: Text(
+        subtitle,
+        style: textTheme.bodyMedium?.copyWith(
+          color: colorScheme.onSurface.withOpacity(0.6),
+        ),
+      ),
+      trailing: trailing,
+      onTap: onTap,
+    );
+  }
+
+  Widget _buildDivider(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 20),
+      height: 0.5,
+      color: colorScheme.outline.withOpacity(0.2),
     );
   }
 
@@ -177,25 +302,38 @@ class ProfileScreen extends StatelessWidget {
     BuildContext context,
     AuthProvider authProvider,
   ) {
-    return Card(
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+
+    return Container(
+      decoration: BoxDecoration(
+        color: colorScheme.surface,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: colorScheme.outline.withOpacity(0.2),
+          width: 0.5,
+        ),
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Padding(
-            padding: const EdgeInsets.all(16.0),
+            padding: const EdgeInsets.fromLTRB(20, 20, 20, 8),
             child: Text(
               'Settings',
-              style: Theme.of(
-                context,
-              ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+              style: textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.w600,
+                color: colorScheme.onSurface,
+              ),
             ),
           ),
           Consumer<SettingsProvider>(
             builder: (context, settingsProvider, child) {
-              return ListTile(
-                leading: const Icon(Icons.notifications),
-                title: const Text('Notifications'),
-                subtitle: const Text('Manage your notification preferences'),
+              return _buildSettingsTile(
+                context,
+                icon: Icons.notifications_outlined,
+                title: 'Notifications',
+                subtitle: 'Manage your notification preferences',
                 trailing: Switch(
                   value: settingsProvider.notificationsEnabled,
                   onChanged: (value) {
@@ -205,13 +343,14 @@ class ProfileScreen extends StatelessWidget {
               );
             },
           ),
-          const Divider(height: 1),
+          _buildDivider(context),
           Consumer<SettingsProvider>(
             builder: (context, settingsProvider, child) {
-              return ListTile(
-                leading: const Icon(Icons.dark_mode),
-                title: const Text('Dark Mode'),
-                subtitle: const Text('Switch between light and dark themes'),
+              return _buildSettingsTile(
+                context,
+                icon: Icons.dark_mode_outlined,
+                title: 'Dark Mode',
+                subtitle: 'Switch between light and dark themes',
                 trailing: Switch(
                   value: settingsProvider.darkModeEnabled,
                   onChanged: (value) {
@@ -221,32 +360,105 @@ class ProfileScreen extends StatelessWidget {
               );
             },
           ),
-          const Divider(height: 1),
-          ListTile(
-            leading: const Icon(Icons.security),
-            title: const Text('Change Password'),
-            subtitle: const Text('Update your account password'),
-            trailing: const Icon(Icons.arrow_forward_ios, size: 16),
-            onTap: () {
-              _showChangePasswordDialog(context);
-            },
+          _buildDivider(context),
+          _buildSettingsTile(
+            context,
+            icon: Icons.calendar_today_outlined,
+            title: 'Calendar Integration',
+            subtitle: 'Connect with your device calendar',
+            trailing: Icon(
+              Icons.arrow_forward_ios_rounded,
+              size: 16,
+              color: colorScheme.onSurface.withOpacity(0.4),
+            ),
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => const CalendarIntegrationScreen(),
+              ),
+            ),
+          ),
+          _buildDivider(context),
+          _buildSettingsTile(
+            context,
+            icon: Icons.security_outlined,
+            title: 'Change Password',
+            subtitle: 'Update your account password',
+            trailing: Icon(
+              Icons.arrow_forward_ios_rounded,
+              size: 16,
+              color: colorScheme.onSurface.withOpacity(0.4),
+            ),
+            onTap: () => _showChangePasswordDialog(context),
           ),
         ],
       ),
     );
   }
 
+  Widget _buildSettingsTile(
+    BuildContext context, {
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    Widget? trailing,
+    VoidCallback? onTap,
+  }) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+
+    return ListTile(
+      contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+      leading: Container(
+        width: 36,
+        height: 36,
+        decoration: BoxDecoration(
+          color: colorScheme.primary.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(10),
+        ),
+        child: Icon(icon, size: 18, color: colorScheme.primary),
+      ),
+      title: Text(
+        title,
+        style: textTheme.bodyMedium?.copyWith(
+          fontWeight: FontWeight.w500,
+          color: colorScheme.onSurface,
+        ),
+      ),
+      subtitle: Text(
+        subtitle,
+        style: textTheme.bodyMedium?.copyWith(
+          color: colorScheme.onSurface.withOpacity(0.6),
+        ),
+      ),
+      trailing: trailing,
+      onTap: onTap,
+    );
+  }
+
   Widget _buildSignOutButton(BuildContext context, AuthProvider authProvider) {
-    return SizedBox(
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+
+    return Container(
       width: double.infinity,
-      child: ElevatedButton.icon(
+      height: 50,
+      decoration: BoxDecoration(
+        color: colorScheme.error,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: TextButton.icon(
         onPressed: () => _showSignOutDialog(context, authProvider),
-        icon: const Icon(Icons.logout),
-        label: const Text('Sign Out'),
-        style: ElevatedButton.styleFrom(
-          backgroundColor: Colors.red,
-          foregroundColor: Colors.white,
-          padding: const EdgeInsets.symmetric(vertical: 16),
+        icon: const Icon(Icons.logout_rounded, size: 18, color: Colors.white),
+        label: Text(
+          'Sign Out',
+          style: textTheme.bodyLarge?.copyWith(
+            fontWeight: FontWeight.w600,
+            color: Colors.white,
+          ),
+        ),
+        style: TextButton.styleFrom(
+          padding: const EdgeInsets.symmetric(horizontal: 24),
         ),
       ),
     );

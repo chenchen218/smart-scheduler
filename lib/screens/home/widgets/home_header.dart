@@ -20,123 +20,147 @@ class HomeHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
     final completedTasks = tasks.where((t) => t.done).length;
     final totalTasks = tasks.length;
 
     return Container(
-      padding: const EdgeInsets.all(24),
+      padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
       child: Column(
         children: [
+          // Top row with title and action buttons
           Row(
             children: [
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: colorScheme.primary,
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                child: Icon(
-                  Icons.task_alt_rounded,
-                  color: colorScheme.onPrimary,
-                  size: 28,
-                ),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      "Auto To-Do Demo",
-                      style: Theme.of(context).textTheme.headlineMedium
-                          ?.copyWith(
-                            fontWeight: FontWeight.bold,
-                            color: colorScheme.onSurface,
-                          ),
+              // App icon and title
+              Row(
+                children: [
+                  Container(
+                    width: 40,
+                    height: 40,
+                    decoration: BoxDecoration(
+                      color: colorScheme.primary,
+                      borderRadius: BorderRadius.circular(12),
                     ),
-                    Text(
-                      "$completedTasks of $totalTasks completed",
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: colorScheme.onSurfaceVariant,
+                    child: const Icon(
+                      Icons.check_circle_rounded,
+                      color: Colors.white,
+                      size: 24,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        "SmartScheduler",
+                        style: textTheme.titleLarge?.copyWith(
+                          fontWeight: FontWeight.w600,
+                          color: colorScheme.onBackground,
+                        ),
                       ),
-                    ),
-                  ],
-                ),
+                      Text(
+                        "$completedTasks of $totalTasks completed",
+                        style: textTheme.bodyMedium?.copyWith(
+                          color: colorScheme.onBackground.withOpacity(0.6),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
               ),
-              // Add Event Button
-              IconButton(
-                onPressed: onAddEvent,
-                icon: Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: colorScheme.secondary,
-                    borderRadius: BorderRadius.circular(12),
+              const Spacer(),
+              // Action buttons
+              Row(
+                children: [
+                  _buildActionButton(
+                    context,
+                    icon: Icons.add_rounded,
+                    onPressed: onAddEvent,
+                    tooltip: 'Add Event',
                   ),
-                  child: Icon(
-                    Icons.event_rounded,
-                    color: colorScheme.onSecondary,
-                    size: 20,
+                  const SizedBox(width: 8),
+                  _buildActionButton(
+                    context,
+                    icon: Icons.refresh_rounded,
+                    onPressed: onRefresh,
+                    tooltip: 'Refresh',
                   ),
-                ),
-                tooltip: 'Add Event',
-              ),
-              // Refresh Button (for debugging)
-              IconButton(
-                onPressed: onRefresh,
-                icon: Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: colorScheme.tertiary,
-                    borderRadius: BorderRadius.circular(12),
+                  const SizedBox(width: 8),
+                  _buildActionButton(
+                    context,
+                    icon: Icons.list_rounded,
+                    onPressed: onDebugAllEvents,
+                    tooltip: 'Debug',
                   ),
-                  child: Icon(
-                    Icons.refresh_rounded,
-                    color: colorScheme.onTertiary,
-                    size: 20,
-                  ),
-                ),
-                tooltip: 'Refresh Events',
-              ),
-              // Debug All Events Button
-              IconButton(
-                onPressed: onDebugAllEvents,
-                icon: Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: Colors.purple,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: const Icon(
-                    Icons.list_rounded,
-                    color: Colors.white,
-                    size: 20,
-                  ),
-                ),
-                tooltip: 'Debug All Events',
+                ],
               ),
             ],
           ),
-          const SizedBox(height: 24),
-          // Progress Bar
-          if (tasks.isNotEmpty)
-            Container(
-              height: 8,
-              decoration: BoxDecoration(
-                color: colorScheme.surfaceContainerHighest,
-                borderRadius: BorderRadius.circular(4),
-              ),
-              child: FractionallySizedBox(
-                alignment: Alignment.centerLeft,
-                widthFactor: tasks.isEmpty ? 0 : completedTasks / totalTasks,
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: colorScheme.primary,
-                    borderRadius: BorderRadius.circular(4),
+          const SizedBox(height: 20),
+          // Progress indicator
+          if (tasks.isNotEmpty) ...[
+            Row(
+              children: [
+                Expanded(
+                  child: Container(
+                    height: 6,
+                    decoration: BoxDecoration(
+                      color: colorScheme.outline.withOpacity(0.2),
+                      borderRadius: BorderRadius.circular(3),
+                    ),
+                    child: FractionallySizedBox(
+                      alignment: Alignment.centerLeft,
+                      widthFactor: completedTasks / totalTasks,
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: colorScheme.primary,
+                          borderRadius: BorderRadius.circular(3),
+                        ),
+                      ),
+                    ),
                   ),
                 ),
-              ),
+                const SizedBox(width: 12),
+                Text(
+                  '${((completedTasks / totalTasks) * 100).round()}%',
+                  style: textTheme.bodySmall?.copyWith(
+                    color: colorScheme.onBackground.withOpacity(0.6),
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
             ),
+          ],
         ],
+      ),
+    );
+  }
+
+  Widget _buildActionButton(
+    BuildContext context, {
+    required IconData icon,
+    required VoidCallback onPressed,
+    required String tooltip,
+  }) {
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return Container(
+      width: 36,
+      height: 36,
+      decoration: BoxDecoration(
+        color: colorScheme.surface,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(
+          color: colorScheme.outline.withOpacity(0.2),
+          width: 0.5,
+        ),
+      ),
+      child: IconButton(
+        onPressed: onPressed,
+        icon: Icon(icon, size: 18, color: colorScheme.onSurface),
+        tooltip: tooltip,
+        padding: EdgeInsets.zero,
+        constraints: const BoxConstraints(),
       ),
     );
   }
