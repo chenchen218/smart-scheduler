@@ -298,8 +298,17 @@ class GoogleCalendarService {
       final codeVerifier = html.window.localStorage['pkce_code_verifier'];
       if (codeVerifier == null) {
         print('PKCE code verifier not found');
+        // Debug: check what's in localStorage
+        print('LocalStorage keys: ${html.window.localStorage.keys}');
         return null;
       }
+      // Debug the stored verifier
+      try {
+        print('PKCE: stored verifier length=${codeVerifier.length}');
+        print(
+          'PKCE: stored verifier first 10 chars: ${codeVerifier.substring(0, codeVerifier.length > 10 ? 10 : codeVerifier.length)}',
+        );
+      } catch (_) {}
 
       final requestBody = Uri(
         queryParameters: {
@@ -327,15 +336,32 @@ class GoogleCalendarService {
       print('Token exchange response status: ${response.statusCode}');
       print('Token exchange response body: ${response.body}');
 
+      // Helper: ensure one-time values are not reused
+      void _clearOneTime() {
+        try {
+          html.window.localStorage.remove('google_auth_code');
+          html.window.localStorage.remove('google_auth_timestamp');
+          html.window.localStorage.remove('pkce_code_verifier');
+        } catch (_) {}
+      }
+
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
         print('Token exchange successful');
+        // Clear one-time data after successful exchange
+        _clearOneTime();
+        // Create expiry time as UTC
+        final expiryTime = DateTime.utc(
+          DateTime.now().year,
+          DateTime.now().month,
+          DateTime.now().day,
+          DateTime.now().hour,
+          DateTime.now().minute,
+          DateTime.now().second,
+        ).add(Duration(seconds: data['expires_in']));
+
         return AccessCredentials(
-          AccessToken(
-            'Bearer',
-            data['access_token'],
-            DateTime.now().add(Duration(seconds: data['expires_in'])),
-          ),
+          AccessToken('Bearer', data['access_token'], expiryTime),
           data['refresh_token'],
           _scopes,
         );
@@ -343,6 +369,8 @@ class GoogleCalendarService {
         print(
           'Token exchange failed with status ${response.statusCode}: ${response.body}',
         );
+        // Clear one-time data after failed exchange too
+        _clearOneTime();
         return null;
       }
     } catch (e) {

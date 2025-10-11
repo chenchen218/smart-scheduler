@@ -27,12 +27,6 @@ class WebOAuthService {
     }
 
     try {
-      // Check if we're returning from OAuth callback
-      final currentUrl = html.window.location.href;
-      if (currentUrl.contains('oauth2redirect')) {
-        return await _handleOAuthCallback(currentUrl);
-      }
-
       // Build OAuth URL
       final authUrl = _buildAuthUrl();
 
@@ -60,6 +54,13 @@ class WebOAuthService {
       }
 
       if (code != null) {
+        // Check if PKCE verifier still exists
+        final verifier = html.window.localStorage['pkce_code_verifier'];
+        print('OAuth callback: PKCE verifier exists: ${verifier != null}');
+        if (verifier != null) {
+          print('OAuth callback: PKCE verifier length: ${verifier.length}');
+        }
+
         // Store the authorization code
         await _storeAuthCode(code);
         print('OAuth authorization code stored successfully');
@@ -81,6 +82,14 @@ class WebOAuthService {
 
     // Store code verifier for later use
     html.window.localStorage['pkce_code_verifier'] = codeVerifier;
+
+    // Debug PKCE values (lengths only)
+    try {
+      print('PKCE: verifier length=${codeVerifier.length}');
+      print('PKCE: challenge length=${codeChallenge.length}');
+      print('PKCE: redirectUri=$_redirectUri');
+      print('PKCE: clientId=$_clientId');
+    } catch (_) {}
 
     final params = {
       'client_id': _clientId,
