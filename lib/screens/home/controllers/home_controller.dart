@@ -153,6 +153,13 @@ class HomeController extends ChangeNotifier {
           endDate: end,
         );
         print('Loaded ${googleEvents.length} Google events');
+        if (googleEvents.isEmpty) {
+          print('Google events list is empty in selected window.');
+        } else {
+          print(
+            'Google events detail: ${googleEvents.map((e) => "${e.title} @ ${(e.startDate ?? e.date).toIso8601String()}").join(', ')}',
+          );
+        }
       } catch (e) {
         print('Google events unavailable (not connected or error): $e');
       }
