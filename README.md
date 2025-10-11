@@ -8,12 +8,14 @@ A modern, AI-powered Flutter application for intelligent task and event manageme
 
 - **Task Management**: Automatic task generation with priority levels
 - **Calendar Integration**: Interactive calendar with event management
+- **Google Calendar Sync**: Real-time synchronization with Google Calendar
 - **Event Creation**: Rich event creation with priority, location, and tags
 - **Smart Scheduling**: AI-powered scheduling suggestions
 - **Voice Input**: Speech-to-text for hands-free event creation
 - **User Authentication**: Complete sign-in/sign-up system with Firebase
 - **Profile Management**: User profiles with photo upload and settings
 - **User Isolation**: Each user sees only their own data
+- **Cross-Platform Events**: Local app events + Google Calendar events
 
 ### 🔐 Authentication & Security
 
@@ -62,7 +64,11 @@ lib/
 │   ├── auth_service.dart        # Firebase authentication service
 │   ├── mock_auth_service.dart   # Mock authentication for development
 │   ├── image_upload_service.dart # Firebase Storage image upload
-│   └── settings_service.dart    # User settings persistence
+│   ├── settings_service.dart    # User settings persistence
+│   ├── firestore_event_service.dart # Firestore event storage
+│   ├── calendar_integration_service.dart # Google Calendar integration
+│   ├── google_calendar_service.dart # Google Calendar API service
+│   └── web_oauth_service.dart   # OAuth 2.0 for web platforms
 ├── config/
 │   └── auth_config.dart         # Authentication configuration
 ├── service/
@@ -87,6 +93,7 @@ lib/
 │   │       └── event_list_widget.dart
 │   ├── calendar/               # Calendar screen module
 │   │   ├── calendar_screen.dart
+│   │   ├── calendar_integration_screen.dart # Google Calendar integration UI
 │   │   ├── controllers/
 │   │   │   └── calendar_controller.dart
 │   │   └── widgets/
@@ -142,22 +149,25 @@ lib/
 
 3. **Firebase Setup**
 
-   The app uses Firebase for authentication and storage. You have two options:
+   The app uses Firebase for authentication, storage, and Firestore database. You have two options:
 
    #### Option A: Use Your Own Firebase Project (Recommended)
 
    1. **Create a Firebase project** at [Firebase Console](https://console.firebase.google.com)
    2. **Enable Authentication** with Email/Password and Google Sign-In
-   3. **Enable Storage** for profile picture uploads
-   4. **Configure Storage Rules** to allow authenticated users to upload
-   5. **Copy the template** and add your credentials:
+   3. **Enable Firestore Database** for event storage
+   4. **Enable Storage** for profile picture uploads
+   5. **Configure Storage Rules** to allow authenticated users to upload
+   6. **Set up Firestore Security Rules** for user data isolation
+   7. **Copy the template** and add your credentials:
       ```bash
       cp setup_env.sh.template setup_env.sh
       ```
-   6. **Edit `setup_env.sh`** with your Firebase project credentials:
+   8. **Edit `setup_env.sh`** with your Firebase project credentials:
       - `FIREBASE_PROJECT_ID`: Your Firebase project ID
       - `FIREBASE_WEB_API_KEY`: Your web API key
       - `FIREBASE_WEB_APP_ID`: Your web app ID
+      - `GOOGLE_CLIENT_SECRET`: Your Google OAuth client secret
       - And other platform-specific credentials
 
    #### Option B: Use Mock Authentication (Development)
@@ -230,7 +240,15 @@ dependencies:
   firebase_core: ^2.24.2
   firebase_auth: ^4.15.3
   firebase_storage: ^11.5.6
+  cloud_firestore: ^4.13.6
   google_sign_in: ^6.1.6
+
+  # Calendar Integration
+  device_calendar: ^4.3.0
+  googleapis: ^11.4.0
+  googleapis_auth: ^1.4.1
+  timezone: ^0.9.4
+  crypto: ^3.0.3
 
   # AI & Voice Features
   speech_to_text: ^6.6.0
@@ -396,6 +414,81 @@ The app supports multiple authentication methods:
 - **Mock Authentication**: Development mode for testing
 - **Password Reset**: Email-based password recovery
 
+## 📅 Google Calendar Integration
+
+### OAuth 2.0 with PKCE
+
+The app integrates with Google Calendar using secure OAuth 2.0 with PKCE (Proof Key for Code Exchange):
+
+- **Secure Authentication**: OAuth 2.0 flow with PKCE for web security
+- **Real-time Sync**: Google Calendar events appear instantly in the app
+- **Cross-Platform**: Works on web with proper OAuth flow
+- **Event Merging**: Local app events + Google Calendar events displayed together
+- **Permission Management**: Granular calendar access permissions
+
+### Google Cloud Console Setup
+
+1. **Enable Google Calendar API** in Google Cloud Console
+2. **Create OAuth 2.0 Credentials** for web application
+3. **Configure Redirect URIs** for OAuth callback
+4. **Set up OAuth Consent Screen** with test users
+5. **Add Client Secret** to environment variables
+
+### Calendar Integration Features
+
+- **Event Synchronization**: Real-time Google Calendar event fetching
+- **Date Range Queries**: Efficient event loading for specific periods
+- **Event Conflict Detection**: Identify scheduling conflicts
+- **Source Identification**: Distinguish between local and Google events
+- **Offline Fallback**: Local storage when Google Calendar unavailable
+
+## 🗄️ Firestore Database Setup
+
+### Database Structure
+
+```
+users/{userId}/events/{eventId}
+```
+
+### Event Data Model
+
+```json
+{
+  "id": "event_123",
+  "title": "Meeting with Team",
+  "description": "Weekly standup",
+  "date": "2025-10-15T10:00:00.000Z",
+  "startDate": "2025-10-15T10:00:00.000Z",
+  "endDate": "2025-10-15T11:00:00.000Z",
+  "priority": "high",
+  "isCompleted": false,
+  "source": "app",
+  "externalId": null,
+  "calendarId": null
+}
+```
+
+### Firestore Security Rules
+
+```javascript
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /users/{userId}/events/{eventId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+  }
+}
+```
+
+### Data Flow Architecture
+
+1. **Primary Storage**: Firestore for cloud-based event storage
+2. **Fallback Storage**: Local storage when Firestore unavailable
+3. **Event Merging**: Local events + Google Calendar events
+4. **Real-time Updates**: Events sync across devices
+5. **User Isolation**: Each user sees only their own data
+
 ### User Profile Features
 
 - **Profile Pictures**: Upload and manage profile photos
@@ -421,6 +514,9 @@ The app supports multiple authentication methods:
 - [x] **User Isolation**: Secure per-user data storage
 - [x] **Profile Management**: User profiles with photo upload
 - [x] **Settings Management**: User preferences and theme settings
+- [x] **Google Calendar Integration**: Real-time sync with Google Calendar
+- [x] **Firestore Database**: Cloud-based event storage
+- [x] **OAuth 2.0 with PKCE**: Secure Google Calendar authentication
 - [ ] **Cloud Sync**: Real-time data synchronization
 - [ ] **Team Collaboration**: Shared calendars and tasks
 - [ ] **Advanced AI**: Machine learning for better scheduling
@@ -472,6 +568,16 @@ The app supports multiple authentication methods:
 - **Credentials missing**: Check that all Firebase environment variables are set
 - **CORS errors**: Ensure Firebase Storage CORS is configured for your domain
 - **Storage bucket mismatch**: Verify bucket name uses `.firebasestorage.app` not `.appspot.com`
+
+#### Google Calendar Integration Issues
+
+- **OAuth redirect mismatch**: Ensure redirect URI in Google Cloud Console matches `http://localhost:3000/oauth2redirect`
+- **Client secret missing**: Add `GOOGLE_CLIENT_SECRET` to `setup_env.sh`
+- **OAuth consent screen**: Configure OAuth consent screen with test users in Google Cloud Console
+- **Calendar API not enabled**: Enable Google Calendar API in Google Cloud Console
+- **PKCE code verifier missing**: Clear stored data and retry OAuth flow
+- **DateTime timezone errors**: Fixed in latest version with proper UTC DateTime handling
+- **Google events not appearing**: Check OAuth authentication status and event fetching logs
 
 ## 📄 License
 
