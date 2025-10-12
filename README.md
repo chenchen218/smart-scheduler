@@ -1,6 +1,6 @@
 # SmartScheduler 🚀
 
-Developer: Chen
+Author: Chen
 A modern, AI-powered Flutter application for intelligent task and event management with voice-to-text capabilities, smart scheduling suggestions, and complete user authentication system.
 
 ## ✨ Features
@@ -475,12 +475,55 @@ users/{userId}/events/{eventId}
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    match /users/{userId}/events/{eventId} {
+    // Users can only access their own data
+    match /users/{userId} {
+      // Allow users to read/write their own user document
       allow read, write: if request.auth != null && request.auth.uid == userId;
+
+      // Users can manage their own events
+      match /events/{eventId} {
+        allow read, write: if request.auth != null && request.auth.uid == userId;
+      }
+
+      // Users can manage their own tasks
+      match /tasks/{taskId} {
+        allow read, write: if request.auth != null && request.auth.uid == userId;
+      }
+
+      // Users can manage their own settings
+      match /settings/{settingId} {
+        allow read, write: if request.auth != null && request.auth.uid == userId;
+      }
+    }
+
+    // Deny all other access
+    match /{document=**} {
+      allow read, write: if false;
     }
   }
 }
 ```
+
+### Deploying Security Rules
+
+**⚠️ CRITICAL: Your Firestore database is in test mode and will expire in 4 days!**
+
+1. **Deploy the rules immediately:**
+
+   ```bash
+   ./deploy_firestore_rules.sh
+   ```
+
+2. **Or deploy manually:**
+
+   ```bash
+   firebase deploy --only firestore:rules
+   ```
+
+3. **Verify in Firebase Console:**
+   - Go to Firestore > Rules
+   - Ensure the rules are deployed and active
+   - Test the rules using the Rules Playground
 
 ### Data Flow Architecture
 
