@@ -11,6 +11,9 @@ class CalendarController extends ChangeNotifier {
   final CalendarService _calendarService = CalendarService();
   final ValueNotifier<List<CalendarEvent>> _selectedEvents = ValueNotifier([]);
 
+  // Cache for events to provide synchronous access for visual indicators
+  final Map<String, List<CalendarEvent>> _eventsCache = {};
+
   DateTime _focusedDay = DateTime.now();
   DateTime? _selectedDay;
   CalendarFormat _calendarFormat = CalendarFormat.month;
@@ -31,6 +34,23 @@ class CalendarController extends ChangeNotifier {
   Future<void> initialize() async {
     _selectedDay = _focusedDay;
     await _loadEvents();
+    await _preloadMonthEvents(_focusedDay);
+  }
+
+  /// Preload events for the current month to show visual indicators
+  Future<void> _preloadMonthEvents(DateTime month) async {
+    try {
+      final startOfMonth = DateTime(month.year, month.month, 1);
+      final endOfMonth = DateTime(month.year, month.month + 1, 0);
+
+      // Load events for the entire month
+      for (int day = 1; day <= endOfMonth.day; day++) {
+        final date = DateTime(month.year, month.month, day);
+        await _loadEventsForDay(date);
+      }
+    } catch (e) {
+      print('Error preloading month events: $e');
+    }
   }
 
   /// Load events for the selected day
@@ -45,15 +65,24 @@ class CalendarController extends ChangeNotifier {
 
   /// Get events for a specific day (synchronous for TableCalendar)
   List<CalendarEvent> getEventsForDay(DateTime day) {
-    // This is used by TableCalendar which expects a synchronous function
-    // We'll load events asynchronously in initialize and onDaySelected
-    return [];
+    // Use cached events for visual indicators
+    final dayKey = _getDayKey(day);
+    return _eventsCache[dayKey] ?? [];
+  }
+
+  /// Get a unique key for a day
+  String _getDayKey(DateTime day) {
+    return '${day.year}-${day.month}-${day.day}';
   }
 
   /// Load events for a specific day (asynchronous)
   Future<List<CalendarEvent>> _loadEventsForDay(DateTime day) async {
     try {
-      return await _calendarService.getEventsForDate(day);
+      final events = await _calendarService.getEventsForDate(day);
+      // Cache the events for synchronous access
+      final dayKey = _getDayKey(day);
+      _eventsCache[dayKey] = events;
+      return events;
     } catch (e) {
       print('Error loading events for day: $e');
       return [];
@@ -106,6 +135,8 @@ class CalendarController extends ChangeNotifier {
   void onPageChanged(DateTime focusedDay) {
     _focusedDay = focusedDay;
     notifyListeners();
+    // Preload events for the new month
+    _preloadMonthEvents(focusedDay);
   }
 
   /// Refresh events
