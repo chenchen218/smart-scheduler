@@ -3,6 +3,7 @@ import 'package:google_sign_in/google_sign_in.dart';
 import '../models/user_model.dart';
 import '../config/auth_config.dart';
 import 'mock_auth_service.dart';
+import 'user_data_deletion_service.dart';
 
 /// Authentication Service
 /// Handles all authentication operations with Firebase
@@ -14,6 +15,8 @@ class AuthService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   GoogleSignIn? _googleSignIn;
   final MockAuthService _mockAuth = MockAuthService();
+  final UserDataDeletionService _dataDeletionService =
+      UserDataDeletionService();
 
   /// Get GoogleSignIn instance (lazy initialization)
   GoogleSignIn get _googleSignInInstance {
@@ -230,21 +233,36 @@ class AuthService {
     }
   }
 
-  /// Delete user account
-  Future<void> deleteAccount() async {
+  /// Delete user account and all associated data
+  Future<bool> deleteAccount() async {
     if (AuthConfig.useMockAuth) {
-      return await _mockAuth.deleteAccount();
+      await _mockAuth.deleteAccount();
+      return true;
     }
 
     try {
-      if (currentUser != null) {
-        await currentUser!.delete();
+      // Use comprehensive data deletion service
+      final success = await _dataDeletionService.deleteAllUserData();
+
+      if (!success) {
+        throw Exception('Failed to delete all user data');
       }
+
+      return true;
     } on FirebaseAuthException catch (e) {
       throw _handleAuthException(e);
     } catch (e) {
       throw 'Account deletion failed: $e';
     }
+  }
+
+  /// Get user data count for confirmation dialog
+  Future<Map<String, int>> getUserDataCount() async {
+    if (AuthConfig.useMockAuth) {
+      return {'events': 0, 'tasks': 0, 'settings': 0};
+    }
+
+    return await _dataDeletionService.getUserDataCount();
   }
 
   /// Get current user model
