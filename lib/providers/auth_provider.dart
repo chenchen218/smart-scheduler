@@ -252,18 +252,38 @@ class AuthProvider with ChangeNotifier {
     }
   }
 
-  /// Delete account
+  /// Delete account and all associated data
   Future<bool> deleteAccount() async {
+    print('AuthProvider: Starting account deletion...');
     _setState(_state.copyWith(isLoading: true, error: null));
 
     try {
-      await _authService.deleteAccount();
-      _user = null;
-      _setState(AuthState.unauthenticated);
-      return true;
+      final success = await _authService.deleteAccount();
+
+      if (success) {
+        print('AuthProvider: Account deleted successfully');
+        _user = null;
+        _setState(AuthState.unauthenticated);
+        return true;
+      } else {
+        print('AuthProvider: Account deletion failed');
+        _setState(AuthState().errorState('Failed to delete account'));
+        return false;
+      }
     } catch (e) {
+      print('AuthProvider: Account deletion error: $e');
       _setState(AuthState().errorState(e.toString()));
       return false;
+    }
+  }
+
+  /// Get user data count for confirmation dialog
+  Future<Map<String, int>> getUserDataCount() async {
+    try {
+      return await _authService.getUserDataCount();
+    } catch (e) {
+      print('AuthProvider: Error getting user data count: $e');
+      return {'events': 0, 'tasks': 0, 'settings': 0};
     }
   }
 
