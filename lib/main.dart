@@ -6,6 +6,7 @@ import 'screens/home/home_screen.dart';
 import 'screens/calendar/calendar_screen.dart';
 import 'screens/profile/profile_screen.dart';
 import 'screens/auth/signin_screen.dart';
+import 'screens/teams/team_list_screen.dart';
 import 'providers/auth_provider.dart';
 import 'providers/settings_provider.dart';
 import 'theme/app_theme.dart';
@@ -47,6 +48,7 @@ class MiniTodoApp extends StatelessWidget {
             darkTheme: AppTheme.darkTheme,
             themeMode: settingsProvider.themeModeForApp,
             home: const AuthWrapper(),
+            routes: {'/teams': (context) => const TeamListScreen()},
           );
         },
       ),
