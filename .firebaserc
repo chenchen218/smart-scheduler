@@ -1,0 +1,15 @@
+{
+  "projects": {
+    "default": "to-do-list-2b175"
+  },
+  "targets": {
+    "to-do-list-2b175": {
+      "hosting": {
+        "smartscheduler": [
+          "smartscheduler"
+        ]
+      }
+    }
+  },
+  "etags": {}
+}
