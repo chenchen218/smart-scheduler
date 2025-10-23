@@ -22,6 +22,60 @@ service cloud.firestore {
       }
     }
     
+    // Team collaboration rules
+    match /teams/{teamId} {
+      // Users can create teams (any authenticated user)
+      allow create: if request.auth != null;
+      
+      // Users can read teams they are members of
+      allow read: if request.auth != null && 
+        (resource.data.ownerId == request.auth.uid || 
+         request.auth.uid in resource.data.members.map(['userId']));
+      
+      // Users can write to teams they own or are admins of
+      allow update, delete: if request.auth != null && 
+        (resource.data.ownerId == request.auth.uid || 
+         request.auth.uid in resource.data.members.map(['userId']));
+    }
+    
+    // Shared events rules
+    match /shared_events/{eventId} {
+      // Users can create events if they are team members
+      allow create: if request.auth != null && 
+        exists(/databases/$(database)/documents/teams/$(request.resource.data.teamId)) &&
+        (get(/databases/$(database)/documents/teams/$(request.resource.data.teamId)).data.ownerId == request.auth.uid ||
+         request.auth.uid in get(/databases/$(database)/documents/teams/$(request.resource.data.teamId)).data.members.map(['userId']));
+      
+      // Users can read events from teams they are members of
+      allow read: if request.auth != null && 
+        exists(/databases/$(database)/documents/teams/$(resource.data.teamId)) &&
+        (get(/databases/$(database)/documents/teams/$(resource.data.teamId)).data.ownerId == request.auth.uid ||
+         request.auth.uid in get(/databases/$(database)/documents/teams/$(resource.data.teamId)).data.members.map(['userId']));
+      
+      // Users can update/delete events if they are team members with appropriate permissions
+      allow update, delete: if request.auth != null && 
+        exists(/databases/$(database)/documents/teams/$(resource.data.teamId)) &&
+        (get(/databases/$(database)/documents/teams/$(resource.data.teamId)).data.ownerId == request.auth.uid ||
+         request.auth.uid in get(/databases/$(database)/documents/teams/$(resource.data.teamId)).data.members.map(['userId']));
+    }
+    
+    // Team invitations rules
+    match /team_invitations/{invitationId} {
+      // Users can read invitations sent to them
+      allow read: if request.auth != null && 
+        resource.data.inviteeEmail == request.auth.token.email;
+      
+      // Team owners and admins can create invitations
+      allow create: if request.auth != null && 
+        exists(/databases/$(database)/documents/teams/$(resource.data.teamId)) &&
+        (get(/databases/$(database)/documents/teams/$(resource.data.teamId)).data.ownerId == request.auth.uid ||
+         request.auth.uid in get(/databases/$(database)/documents/teams/$(resource.data.teamId)).data.members.map(['userId']));
+      
+      // Users can update invitations sent to them
+      allow update: if request.auth != null && 
+        resource.data.inviteeEmail == request.auth.token.email;
+    }
+    
     // Deny all other access
     match /{document=**} {
       allow read, write: if false;
