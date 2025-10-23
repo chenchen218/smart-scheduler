@@ -379,6 +379,19 @@ class ProfileScreen extends StatelessWidget {
           _buildDivider(context),
           _buildSettingsTile(
             context,
+            icon: Icons.group_outlined,
+            title: 'Teams',
+            subtitle: 'Manage your teams and collaborations',
+            trailing: Icon(
+              Icons.arrow_forward_ios_rounded,
+              size: 16,
+              color: colorScheme.onSurface.withOpacity(0.4),
+            ),
+            onTap: () => Navigator.pushNamed(context, '/teams'),
+          ),
+          _buildDivider(context),
+          _buildSettingsTile(
+            context,
             icon: Icons.security_outlined,
             title: 'Change Password',
             subtitle: 'Update your account password',
