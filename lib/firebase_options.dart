@@ -42,16 +42,14 @@ class DefaultFirebaseOptions {
   }
 
   static FirebaseOptions get web => FirebaseOptions(
-    apiKey: const String.fromEnvironment('FIREBASE_WEB_API_KEY'),
-    appId: const String.fromEnvironment('FIREBASE_WEB_APP_ID'),
-    messagingSenderId: const String.fromEnvironment(
-      'FIREBASE_MESSAGING_SENDER_ID',
-    ),
-    projectId: const String.fromEnvironment('FIREBASE_PROJECT_ID'),
-    authDomain:
-        '${const String.fromEnvironment('FIREBASE_PROJECT_ID')}.firebaseapp.com',
-    storageBucket:
-        '${const String.fromEnvironment('FIREBASE_PROJECT_ID')}.firebasestorage.app',
+    apiKey:
+        'AIzaSyD1rUbQB0USpFEBoSO1kH6QYRTvl_OKPvo', // Replace with your actual API key
+    appId:
+        '1:796545909849:web:abb40c2cd60d583f87dd48', // Replace with your actual App ID
+    messagingSenderId: '796545909849', // Replace with your actual Sender ID
+    projectId: 'to-do-list-2b175',
+    authDomain: 'to-do-list-2b175.firebaseapp.com',
+    storageBucket: 'to-do-list-2b175.firebasestorage.app',
   );
 
   static FirebaseOptions get android => FirebaseOptions(
