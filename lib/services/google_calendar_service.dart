@@ -17,9 +17,13 @@ class GoogleCalendarService {
   GoogleCalendarService._internal();
 
   // Google Calendar API configuration
-  static const String _clientId =
-      '796545909849-d14htdi0bdehcljan5usm5lf4f7o4ah9.apps.googleusercontent.com';
-  static const String _redirectUri = 'http://localhost:3000/oauth2redirect';
+  static const String _clientId = String.fromEnvironment('GOOGLE_CLIENT_ID');
+  static String get _redirectUri {
+    if (kIsWeb && html.window.location.hostname == 'localhost') {
+      return 'http://localhost:3000/oauth2redirect';
+    }
+    return 'https://smartscheduler.web.app/oauth2redirect';
+  }
 
   // Get client secret from environment variable
   static String get _clientSecret {
