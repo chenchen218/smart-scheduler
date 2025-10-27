@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import '../services/settings_service.dart';
+import '../services/notification_service.dart';
 
 /// Provider for managing app settings and preferences
 class SettingsProvider with ChangeNotifier {
   final SettingsService _settingsService = SettingsService();
+  final NotificationService _notificationService = NotificationService();
 
   bool _notificationsEnabled = true;
   bool _darkModeEnabled = false;
@@ -44,6 +46,8 @@ class SettingsProvider with ChangeNotifier {
 
     try {
       await _settingsService.setNotificationsEnabled(_notificationsEnabled);
+      // Update the notification service
+      await _notificationService.setEnabled(_notificationsEnabled);
     } catch (e) {
       // Revert on error
       _notificationsEnabled = !_notificationsEnabled;
