@@ -18,10 +18,9 @@ class WebOAuthService {
   static String get _clientId {
     if (_cachedClientId == null) {
       const envClientId = String.fromEnvironment('GOOGLE_CLIENT_ID');
-      if (envClientId.isEmpty) {
-        throw Exception('GOOGLE_CLIENT_ID environment variable not set');
-      }
-      _cachedClientId = envClientId;
+      _cachedClientId = envClientId.isNotEmpty
+          ? envClientId
+          : '796545909849-d14htdi0bdehcljan5usm5lf4f7o4ah9.apps.googleusercontent.com';
     }
     return _cachedClientId!;
   }
@@ -200,21 +199,21 @@ class WebOAuthService {
 
   // Cached authentication state to prevent infinite loops
   bool? _cachedIsAuthenticated;
-  
+
   /// Check if user is authenticated
   bool get isAuthenticated {
     if (!kIsWeb) return false;
-    
+
     // Return cached value if available
     if (_cachedIsAuthenticated != null) {
       return _cachedIsAuthenticated!;
     }
-    
+
     // Check and cache the authentication state
     _cachedIsAuthenticated = getStoredAuthCode() != null;
     return _cachedIsAuthenticated!;
   }
-  
+
   /// Clear cached authentication state (call when auth state changes)
   void _clearAuthCache() {
     _cachedIsAuthenticated = null;
