@@ -48,6 +48,9 @@ dependencies:
   flutter_tts: ^3.8.5 # text-to-speech
   permission_handler: ^11.2.0 # microphone permissions
 
+  # Notification Features
+  flutter_local_notifications: ^17.0.0 # local notifications
+
   # Image and File Handling
   image_picker: ^1.0.4 # image selection from gallery/camera
   path: ^1.8.3 # path manipulation utilities

@@ -5,6 +5,7 @@ import 'package:image_picker/image_picker.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/settings_provider.dart';
 import '../../services/image_upload_service.dart';
+import '../../services/notification_service.dart';
 import '../../main.dart';
 import '../calendar/calendar_integration_screen.dart';
 

@@ -16,22 +16,40 @@ class GoogleCalendarService {
   factory GoogleCalendarService() => _instance;
   GoogleCalendarService._internal();
 
-  // Google Calendar API configuration
-  static const String _clientId = String.fromEnvironment('GOOGLE_CLIENT_ID');
-  static String get _redirectUri {
-    if (kIsWeb && html.window.location.hostname == 'localhost') {
-      return 'http://localhost:3000/oauth2redirect';
+  // Google Calendar API configuration - cached values to prevent infinite loops
+  static String? _cachedClientId;
+  static String? _cachedRedirectUri;
+  static String? _cachedClientSecret;
+
+  static String get _clientId {
+    if (_cachedClientId == null) {
+      const envClientId = String.fromEnvironment('GOOGLE_CLIENT_ID');
+      _cachedClientId = envClientId.isNotEmpty
+          ? envClientId
+          : '796545909849-d14htdi0bdehcljan5usm5lf4f7o4ah9.apps.googleusercontent.com';
     }
-    return 'https://smartscheduler.web.app/oauth2redirect';
+    return _cachedClientId!;
   }
 
-  // Get client secret from environment variable
-  static String get _clientSecret {
-    const clientSecret = String.fromEnvironment('GOOGLE_CLIENT_SECRET');
-    if (clientSecret.isEmpty) {
-      throw Exception('GOOGLE_CLIENT_SECRET environment variable is not set');
+  static String get _redirectUri {
+    if (_cachedRedirectUri == null) {
+      if (kIsWeb && html.window.location.hostname == 'localhost') {
+        _cachedRedirectUri = 'http://localhost:3000/oauth2redirect';
+      } else {
+        _cachedRedirectUri = 'https://smartscheduler.web.app/oauth2redirect';
+      }
     }
-    return clientSecret;
+    return _cachedRedirectUri!;
+  }
+
+  static String get _clientSecret {
+    if (_cachedClientSecret == null) {
+      const envClientSecret = String.fromEnvironment('GOOGLE_CLIENT_SECRET');
+      _cachedClientSecret = envClientSecret.isNotEmpty
+          ? envClientSecret
+          : ''; // Empty for PKCE-only flow in production
+    }
+    return _cachedClientSecret!;
   }
 
   static const List<String> _scopes = [
@@ -314,16 +332,20 @@ class GoogleCalendarService {
         );
       } catch (_) {}
 
-      final requestBody = Uri(
-        queryParameters: {
-          'client_id': _clientId,
-          'code': authCode,
-          'grant_type': 'authorization_code',
-          'redirect_uri': _redirectUri,
-          'code_verifier': codeVerifier,
-          'client_secret': _clientSecret,
-        },
-      ).query;
+      final requestParams = {
+        'client_id': _clientId,
+        'code': authCode,
+        'grant_type': 'authorization_code',
+        'redirect_uri': _redirectUri,
+        'code_verifier': codeVerifier,
+      };
+
+      // Only include client_secret if it's not empty (PKCE-only flow)
+      if (_clientSecret.isNotEmpty) {
+        requestParams['client_secret'] = _clientSecret;
+      }
+
+      final requestBody = Uri(queryParameters: requestParams).query;
 
       print('Token exchange request body: $requestBody');
       print('Token exchange URL: https://oauth2.googleapis.com/token');

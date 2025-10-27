@@ -47,6 +47,7 @@ class HomeController extends ChangeNotifier {
   /// Add a random task to the list
   void _addRandomTask() {
     final task = Task(
+      id: DateTime.now().millisecondsSinceEpoch.toString(),
       name: sampleTasks[rand.nextInt(sampleTasks.length)],
       priority: ["Low", "Medium", "High"][rand.nextInt(3)],
       done: false,
@@ -71,9 +72,13 @@ class HomeController extends ChangeNotifier {
     final index = tasks.indexOf(task);
     if (index != -1) {
       tasks[index] = Task(
+        id: task.id,
         name: task.name,
         priority: task.priority,
         done: !task.done,
+        deadline: task.deadline,
+        createdAt: task.createdAt,
+        updatedAt: DateTime.now(),
       );
       // Don't notify listeners for simple toggles - let the UI handle it
     }

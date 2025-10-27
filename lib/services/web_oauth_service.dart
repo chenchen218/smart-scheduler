@@ -11,14 +11,31 @@ class WebOAuthService {
   factory WebOAuthService() => _instance;
   WebOAuthService._internal();
 
-  // OAuth configuration
-  static const String _clientId = String.fromEnvironment('GOOGLE_CLIENT_ID');
-  static String get _redirectUri {
-    if (kIsWeb && html.window.location.hostname == 'localhost') {
-      return 'http://localhost:3000/oauth2redirect';
+  // OAuth configuration - cached values to prevent infinite loops
+  static String? _cachedClientId;
+  static String? _cachedRedirectUri;
+
+  static String get _clientId {
+    if (_cachedClientId == null) {
+      const envClientId = String.fromEnvironment('GOOGLE_CLIENT_ID');
+      _cachedClientId = envClientId.isNotEmpty
+          ? envClientId
+          : '796545909849-d14htdi0bdehcljan5usm5lf4f7o4ah9.apps.googleusercontent.com';
     }
-    return 'https://smartscheduler.web.app/oauth2redirect';
+    return _cachedClientId!;
   }
+
+  static String get _redirectUri {
+    if (_cachedRedirectUri == null) {
+      if (kIsWeb && html.window.location.hostname == 'localhost') {
+        _cachedRedirectUri = 'http://localhost:3000/oauth2redirect';
+      } else {
+        _cachedRedirectUri = 'https://smartscheduler.web.app/oauth2redirect';
+      }
+    }
+    return _cachedRedirectUri!;
+  }
+
   static const List<String> _scopes = [
     'https://www.googleapis.com/auth/calendar.readonly',
     'https://www.googleapis.com/auth/calendar.events',
@@ -141,6 +158,8 @@ class WebOAuthService {
     html.window.localStorage['google_auth_timestamp'] = DateTime.now()
         .millisecondsSinceEpoch
         .toString();
+    // Clear cache since auth state changed
+    _clearAuthCache();
   }
 
   /// Get stored authorization code
@@ -174,12 +193,30 @@ class WebOAuthService {
     html.window.localStorage.remove('google_access_token');
     html.window.localStorage.remove('google_refresh_token');
     html.window.localStorage.remove('pkce_code_verifier');
+    // Clear cache since auth state changed
+    _clearAuthCache();
   }
+
+  // Cached authentication state to prevent infinite loops
+  bool? _cachedIsAuthenticated;
 
   /// Check if user is authenticated
   bool get isAuthenticated {
     if (!kIsWeb) return false;
-    return getStoredAuthCode() != null;
+
+    // Return cached value if available
+    if (_cachedIsAuthenticated != null) {
+      return _cachedIsAuthenticated!;
+    }
+
+    // Check and cache the authentication state
+    _cachedIsAuthenticated = getStoredAuthCode() != null;
+    return _cachedIsAuthenticated!;
+  }
+
+  /// Clear cached authentication state (call when auth state changes)
+  void _clearAuthCache() {
+    _cachedIsAuthenticated = null;
   }
 
   /// Check if we're on the OAuth callback page and handle it

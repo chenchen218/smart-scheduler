@@ -1,10 +1,12 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../models/calendar_event.dart';
+import 'notification_service.dart';
 
 class FirestoreEventService {
   static final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   static final FirebaseAuth _auth = FirebaseAuth.instance;
+  final NotificationService _notificationService = NotificationService();
 
   /// Get the current user's events collection reference
   CollectionReference get _eventsCollection {
@@ -34,6 +36,10 @@ class FirestoreEventService {
   Future<CalendarEvent> createEvent(CalendarEvent event) async {
     try {
       await _eventsCollection.doc(event.id).set(event.toJson());
+
+      // Schedule notification for the event
+      await _notificationService.scheduleEventReminder(event);
+
       return event;
     } catch (e) {
       print('Error creating event in Firestore: $e');
@@ -45,6 +51,11 @@ class FirestoreEventService {
   Future<CalendarEvent> updateEvent(CalendarEvent event) async {
     try {
       await _eventsCollection.doc(event.id).update(event.toJson());
+
+      // Cancel old notification and schedule new one
+      await _notificationService.cancelNotification(event.id.hashCode);
+      await _notificationService.scheduleEventReminder(event);
+
       return event;
     } catch (e) {
       print('Error updating event in Firestore: $e');
@@ -56,6 +67,9 @@ class FirestoreEventService {
   Future<void> deleteEvent(String eventId) async {
     try {
       await _eventsCollection.doc(eventId).delete();
+
+      // Cancel notification for deleted event
+      await _notificationService.cancelNotification(eventId.hashCode);
     } catch (e) {
       print('Error deleting event from Firestore: $e');
       rethrow;
