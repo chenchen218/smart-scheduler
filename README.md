@@ -131,7 +131,7 @@ lib/
 - Dart SDK (3.0+)
 - Android Studio / VS Code
 - Chrome (for web development)
-- Firebase project (for authentication)
+- Firebase project (for authentication, Firestore, Storage, Hosting)
 
 ### Installation
 
@@ -139,7 +139,7 @@ lib/
 
    ```bash
    git clone <repository-url>
-   cd mini_todo_app
+   cd SmartScheduler
    ```
 
 2. **Install dependencies**
@@ -164,22 +164,27 @@ lib/
       ```bash
       cp setup_env.sh.template setup_env.sh
       ```
-   8. **Edit `setup_env.sh`** with your Firebase project credentials:
-      - `FIREBASE_PROJECT_ID`: Your Firebase project ID
-      - `FIREBASE_WEB_API_KEY`: Your web API key
-      - `FIREBASE_WEB_APP_ID`: Your web app ID
-      - `GOOGLE_CLIENT_SECRET`: Your Google OAuth client secret
-      - And other platform-specific credentials
+   8. **Edit `setup_env.sh` (LOCAL ONLY)** with your project credentials:
+
+      - `FIREBASE_PROJECT_ID`, `FIREBASE_WEB_API_KEY`, `FIREBASE_WEB_APP_ID`
+      - `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` (for local development)
+      - Other platform-specific credentials as needed
+
+      Notes:
+
+      - `setup_env.sh` injects variables via `--dart-define` for local runs.
+      - Production builds on Firebase Hosting do not execute this script.
+      - App uses a hybrid strategy: prefers env values if present; otherwise uses safe fallbacks for web. Client secret is empty in production; PKCE is used.
 
    #### Option B: Use Mock Authentication (Development)
 
    The app includes mock authentication for development. No Firebase setup required.
    Set `useMockAuth = true` in `lib/config/auth_config.dart` for development.
 
-4. **Run the application**
+4. **Run the application (Local Development)**
 
    ```bash
-   # Using Firebase (with your credentials)
+   # Using Firebase (LOCAL with your credentials)
    ./setup_env.sh
 
    # Or manually with environment variables
@@ -187,6 +192,14 @@ lib/
      --dart-define=FIREBASE_PROJECT_ID=your-project-id \
      --dart-define=FIREBASE_WEB_API_KEY=your-api-key \
      # ... other variables
+
+   # OAuth redirect URIs to configure in Google Cloud Console:
+   #   http://localhost:3000/oauth2redirect  (local)
+   #   https://smartscheduler.web.app/oauth2redirect  (production)
+
+   # Firebase Auth authorized domains:
+   #   localhost
+   #   smartscheduler.web.app
    ```
 
 ### 🔧 Development Setup
@@ -328,6 +341,13 @@ The app requires the following permissions:
 <string>This app needs access to microphone for voice input to create events and tasks.</string>
 ```
 
+### Notifications
+
+- Uses `flutter_local_notifications` with `timezone` for precise scheduling.
+- Timezones are initialized and the notification service is started in `lib/main.dart`.
+- Web support is limited by browsers and can differ from mobile behavior.
+- On iOS and Android 13+, ensure notification permissions are requested/granted.
+
 ## 📊 Performance Optimizations
 
 ### Modular Architecture Benefits
@@ -370,12 +390,18 @@ flutter test test/
 ### Web Deployment
 
 ```bash
-# Build for web
+# Build optimized web app
 flutter build web
 
-# Deploy to Firebase Hosting
-firebase deploy
+# Deploy to Firebase Hosting target
+firebase deploy --only hosting:smartscheduler
 ```
+
+#### Hosting Notes
+
+- `firebase.json` is configured with `public: build/web` and SPA rewrite to `/index.html`.
+- Multiple hosting targets are supported; this app uses the `smartscheduler` target.
+- If you see the Firebase welcome page, ensure `public` points to `build/web` and you ran `flutter build web` before deploying.
 
 ### Mobile Deployment
 
@@ -432,8 +458,10 @@ The app integrates with Google Calendar using secure OAuth 2.0 with PKCE (Proof 
 1. **Enable Google Calendar API** in Google Cloud Console
 2. **Create OAuth 2.0 Credentials** for web application
 3. **Configure Redirect URIs** for OAuth callback
+   - Local: `http://localhost:3000/oauth2redirect`
+   - Production: `https://smartscheduler.web.app/oauth2redirect`
 4. **Set up OAuth Consent Screen** with test users
-5. **Add Client Secret** to environment variables
+5. **Client Secret**: Use only for local development via `setup_env.sh`. In production, the app uses PKCE without a client secret.
 
 ### Calendar Integration Features
 
@@ -605,6 +633,11 @@ service cloud.firestore {
 - Delete `pubspec.lock`
 - Run `flutter pub get`
 
+#### GitHub Push Protection
+
+- If a push is blocked due to detected secrets, remove hardcoded secrets and switch to `String.fromEnvironment` with values passed via `setup_env.sh` for local dev.
+- If secrets were committed in history, you may need to rewrite the branch history to purge them before pushing again.
+
 #### Environment Setup Issues
 
 - **Script not executable**: Run `chmod +x setup_env.sh`
@@ -615,8 +648,8 @@ service cloud.firestore {
 
 #### Google Calendar Integration Issues
 
-- **OAuth redirect mismatch**: Ensure redirect URI in Google Cloud Console matches `http://localhost:3000/oauth2redirect`
-- **Client secret missing**: Add `GOOGLE_CLIENT_SECRET` to `setup_env.sh`
+- **OAuth redirect mismatch**: Ensure redirect URIs include both `http://localhost:3000/oauth2redirect` and `https://smartscheduler.web.app/oauth2redirect`
+- **Client secret missing**: Expected in production; PKCE flow uses no client secret. For local development, add `GOOGLE_CLIENT_SECRET` to `setup_env.sh`.
 - **OAuth consent screen**: Configure OAuth consent screen with test users in Google Cloud Console
 - **Calendar API not enabled**: Enable Google Calendar API in Google Cloud Console
 - **PKCE code verifier missing**: Clear stored data and retry OAuth flow
