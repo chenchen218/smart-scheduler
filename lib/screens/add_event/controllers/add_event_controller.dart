@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../models/calendar_event.dart';
+import '../../../models/recurrence_pattern.dart';
 import '../../../service/calendar_service.dart';
 import '../../../service/ai_service.dart';
 
@@ -23,6 +24,7 @@ class AddEventController extends ChangeNotifier {
   Color selectedColor = Colors.blue;
   bool isCompleted = false;
   String priority = 'Medium';
+  RecurrencePattern? recurrencePattern;
 
   // Voice input state
   bool isListening = false;
@@ -80,6 +82,7 @@ class AddEventController extends ChangeNotifier {
     selectedColor = event.color;
     isCompleted = event.isCompleted;
     priority = event.priority;
+    recurrencePattern = event.recurrencePattern;
   }
 
   /// Start voice input for event creation
@@ -239,6 +242,12 @@ class AddEventController extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Update recurrence pattern
+  void updateRecurrencePattern(RecurrencePattern? pattern) {
+    recurrencePattern = pattern;
+    notifyListeners();
+  }
+
   /// Save event
   Future<bool> saveEvent() async {
     if (titleController.text.trim().isEmpty) {
@@ -246,6 +255,30 @@ class AddEventController extends ChangeNotifier {
     }
 
     try {
+      // Calculate startDate and endDate for proper DateTime handling
+      DateTime? startDate;
+      DateTime? endDate;
+
+      if (!isAllDay && startTime != null) {
+        startDate = DateTime(
+          selectedDate.year,
+          selectedDate.month,
+          selectedDate.day,
+          startTime!.hour,
+          startTime!.minute,
+        );
+
+        if (endTime != null) {
+          endDate = DateTime(
+            selectedDate.year,
+            selectedDate.month,
+            selectedDate.day,
+            endTime!.hour,
+            endTime!.minute,
+          );
+        }
+      }
+
       final event = CalendarEvent(
         id: eventToEdit?.id ?? DateTime.now().millisecondsSinceEpoch.toString(),
         title: titleController.text.trim(),
@@ -267,6 +300,9 @@ class AddEventController extends ChangeNotifier {
                   .toList(),
         isCompleted: isCompleted,
         priority: priority,
+        startDate: startDate,
+        endDate: endDate,
+        recurrencePattern: recurrencePattern,
       );
 
       if (eventToEdit != null) {

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'recurrence_pattern.dart';
 
 class CalendarEvent {
   final String id;
@@ -21,6 +22,13 @@ class CalendarEvent {
   final DateTime? startDate; // Full start date with time
   final DateTime? endDate; // Full end date with time
 
+  // Recurring event fields
+  final RecurrencePattern? recurrencePattern;
+  final String?
+  parentEventId; // ID of the parent recurring event (for instances)
+  final bool
+  isRecurringInstance; // True if this is an instance of a recurring event
+
   CalendarEvent({
     required this.id,
     required this.title,
@@ -39,6 +47,9 @@ class CalendarEvent {
     this.calendarId,
     this.startDate,
     this.endDate,
+    this.recurrencePattern,
+    this.parentEventId,
+    this.isRecurringInstance = false,
   });
 
   CalendarEvent copyWith({
@@ -59,6 +70,9 @@ class CalendarEvent {
     String? calendarId,
     DateTime? startDate,
     DateTime? endDate,
+    RecurrencePattern? recurrencePattern,
+    String? parentEventId,
+    bool? isRecurringInstance,
   }) {
     return CalendarEvent(
       id: id ?? this.id,
@@ -78,6 +92,9 @@ class CalendarEvent {
       calendarId: calendarId ?? this.calendarId,
       startDate: startDate ?? this.startDate,
       endDate: endDate ?? this.endDate,
+      recurrencePattern: recurrencePattern ?? this.recurrencePattern,
+      parentEventId: parentEventId ?? this.parentEventId,
+      isRecurringInstance: isRecurringInstance ?? this.isRecurringInstance,
     );
   }
 
@@ -112,6 +129,9 @@ class CalendarEvent {
       'calendarId': calendarId,
       'startDate': startDate?.toIso8601String(),
       'endDate': endDate?.toIso8601String(),
+      'recurrencePattern': recurrencePattern?.toJson(),
+      'parentEventId': parentEventId,
+      'isRecurringInstance': isRecurringInstance,
     };
   }
 
@@ -140,6 +160,11 @@ class CalendarEvent {
           ? DateTime.parse(json['startDate'])
           : null,
       endDate: json['endDate'] != null ? DateTime.parse(json['endDate']) : null,
+      recurrencePattern: json['recurrencePattern'] != null
+          ? RecurrencePattern.fromJson(json['recurrencePattern'])
+          : null,
+      parentEventId: json['parentEventId'],
+      isRecurringInstance: json['isRecurringInstance'] ?? false,
     );
   }
 
@@ -166,5 +191,17 @@ class CalendarEvent {
   bool get isPast {
     final now = DateTime.now();
     return date.isBefore(DateTime(now.year, now.month, now.day));
+  }
+
+  /// Check if this event is recurring
+  bool get isRecurring {
+    return recurrencePattern != null &&
+        recurrencePattern!.type != RecurrenceType.none;
+  }
+
+  /// Get display text for recurrence
+  String get recurrenceDisplayText {
+    if (!isRecurring) return '';
+    return recurrencePattern!.toDisplayString();
   }
 }
