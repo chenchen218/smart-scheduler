@@ -1,25 +1,41 @@
 import '../models/calendar_event.dart';
 import 'local_storage_service.dart';
 import '../services/firestore_event_service.dart';
+import '../services/recurrence_service.dart';
 
 class CalendarService {
   final LocalStorageService _localStorageService = LocalStorageService();
   final FirestoreEventService _firestoreEventService = FirestoreEventService();
+  final RecurrenceService _recurrenceService = RecurrenceService();
 
   /// Get all events from Firebase Firestore
+  /// This expands recurring events into instances for the next 6 months
   Future<List<CalendarEvent>> getEvents() async {
     try {
-      return await _firestoreEventService.getEvents();
+      final events = await _firestoreEventService.getEvents();
+      return _expandRecurringEvents(events);
     } catch (e) {
       print('Error fetching events from Firestore: $e');
       // Fallback to local storage if Firestore fails
       try {
-        return await _localStorageService.getEvents();
+        final events = await _localStorageService.getEvents();
+        return _expandRecurringEvents(events);
       } catch (localError) {
         print('Error fetching events from local storage: $localError');
         return [];
       }
     }
+  }
+
+  /// Expand recurring events into instances for a date range
+  List<CalendarEvent> _expandRecurringEvents(List<CalendarEvent> events) {
+    final now = DateTime.now();
+    final endDate = DateTime(now.year, now.month + 6, now.day);
+    return _recurrenceService.expandRecurringEvents(
+      events: events,
+      startDate: now,
+      endDate: endDate,
+    );
   }
 
   /// Create a new event in Firebase Firestore
@@ -80,10 +96,24 @@ class CalendarService {
     }
   }
 
-  /// Get events for a specific date from local storage
+  /// Get events for a specific date
+  /// This expands recurring events to show instances on that date
   Future<List<CalendarEvent>> getEventsForDate(DateTime date) async {
     try {
-      return await _localStorageService.getEventsForDate(date);
+      // Get all events and expand recurring ones
+      final allEvents = await getEvents();
+
+      // Filter for events on this date
+      final startOfDay = DateTime(date.year, date.month, date.day);
+      final endOfDay = DateTime(date.year, date.month, date.day, 23, 59, 59);
+
+      return allEvents.where((event) {
+        final eventDate = event.startDate ?? event.date;
+        return eventDate.isAfter(
+              startOfDay.subtract(const Duration(seconds: 1)),
+            ) &&
+            eventDate.isBefore(endOfDay.add(const Duration(seconds: 1)));
+      }).toList();
     } catch (e) {
       print('Error fetching events for date: $e');
       return [];

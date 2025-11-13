@@ -4,6 +4,7 @@ import '../../models/calendar_event.dart';
 import 'widgets/voice_input_section.dart';
 import 'widgets/priority_selection_widget.dart';
 import 'widgets/color_selection_widget.dart';
+import 'widgets/recurrence_selection_widget.dart';
 import 'widgets/smart_suggestions_widget.dart';
 import 'controllers/add_event_controller.dart';
 
@@ -267,6 +268,15 @@ class _AddEventScreenState extends State<AddEventScreen> {
                   ColorSelectionWidget(
                     selectedColor: _controller.selectedColor,
                     onColorChanged: _controller.updateSelectedColor,
+                  ),
+                  const SizedBox(height: 16),
+
+                  // Recurrence Selection
+                  Card(
+                    child: RecurrenceSelectionWidget(
+                      initialPattern: _controller.recurrencePattern,
+                      onChanged: _controller.updateRecurrencePattern,
+                    ),
                   ),
                   const SizedBox(height: 16),
 
