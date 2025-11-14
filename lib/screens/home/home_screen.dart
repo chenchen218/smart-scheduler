@@ -6,6 +6,7 @@ import 'widgets/task_list_widget.dart';
 import 'widgets/event_list_widget.dart';
 import 'controllers/home_controller.dart';
 import '../add_event/add_event_screen.dart';
+import '../search/search_screen.dart';
 
 /// Home Screen - Modularized Version
 /// Main screen for displaying tasks and events
@@ -68,6 +69,13 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     });
   }
 
+  void _onSearch() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => const SearchScreen()),
+    );
+  }
+
   void _onRefresh() {
     print('Manual refresh triggered');
     _controller.loadEvents();
@@ -92,7 +100,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    final textTheme = Theme.of(context).textTheme;
 
     return Scaffold(
       backgroundColor: colorScheme.background,
@@ -101,6 +108,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           children: [
             // Header section with app title, progress bar, and action buttons
             HomeHeader(
+              onSearch: _onSearch,
               tasks: _controller.tasks,
               onAddEvent: _onAddEvent,
               onRefresh: _onRefresh,
