@@ -9,6 +9,7 @@ class SettingsService {
   static const String _notificationsKey = 'notifications_enabled';
   static const String _darkModeKey = 'dark_mode_enabled';
   static const String _themeKey = 'theme_mode';
+  static const String _recentSearchesKey = 'recent_searches';
 
   /// Get SharedPreferences instance
   Future<SharedPreferences> get _prefs async {
@@ -51,11 +52,24 @@ class SettingsService {
     await prefs.setInt(_themeKey, mode);
   }
 
+  /// Get recent searches
+  Future<List<String>> getRecentSearches() async {
+    final prefs = await _prefs;
+    return prefs.getStringList(_recentSearchesKey) ?? [];
+  }
+
+  /// Set recent searches
+  Future<void> setRecentSearches(List<String> searches) async {
+    final prefs = await _prefs;
+    await prefs.setStringList(_recentSearchesKey, searches);
+  }
+
   /// Clear all settings
   Future<void> clearSettings() async {
     final prefs = await _prefs;
     await prefs.remove(_notificationsKey);
     await prefs.remove(_darkModeKey);
     await prefs.remove(_themeKey);
+    await prefs.remove(_recentSearchesKey);
   }
 }

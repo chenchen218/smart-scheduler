@@ -8,6 +8,7 @@ class HomeHeader extends StatelessWidget {
   final VoidCallback onAddEvent;
   final VoidCallback onRefresh;
   final VoidCallback onDebugAllEvents;
+  final VoidCallback? onSearch;
 
   const HomeHeader({
     super.key,
@@ -15,6 +16,7 @@ class HomeHeader extends StatelessWidget {
     required this.onAddEvent,
     required this.onRefresh,
     required this.onDebugAllEvents,
+    this.onSearch,
   });
 
   @override
@@ -72,6 +74,15 @@ class HomeHeader extends StatelessWidget {
               // Action buttons
               Row(
                 children: [
+                  if (onSearch != null) ...[
+                    _buildActionButton(
+                      context,
+                      icon: Icons.search_rounded,
+                      onPressed: onSearch!,
+                      tooltip: 'Search',
+                    ),
+                    const SizedBox(width: 8),
+                  ],
                   _buildActionButton(
                     context,
                     icon: Icons.add_rounded,

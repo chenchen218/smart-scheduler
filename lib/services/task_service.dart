@@ -144,4 +144,18 @@ class TaskService {
       print('TaskService: Error scheduling task notifications: $e');
     }
   }
+
+  /// Search tasks by name
+  Future<List<Task>> searchTasks(String query) async {
+    try {
+      final allTasks = await getTasks();
+      final queryLower = query.toLowerCase();
+      return allTasks
+          .where((task) => task.name.toLowerCase().contains(queryLower))
+          .toList();
+    } catch (e) {
+      print('Error searching tasks: $e');
+      return [];
+    }
+  }
 }
