@@ -3,6 +3,7 @@ import 'dart:async';
 import 'dart:math';
 import '../../../models/task.dart';
 import '../../../models/calendar_event.dart';
+import '../../../models/filter_options.dart';
 import '../../../service/calendar_service.dart';
 import '../../../services/calendar_integration_service.dart';
 import '../../../widgets/task_card.dart';
@@ -21,6 +22,43 @@ class HomeController extends ChangeNotifier {
       CalendarIntegrationService();
   Timer? autoTimer;
   Timer? _debounceTimer;
+
+  // Filter and sort state
+  FilterOptions _currentFilters = const FilterOptions();
+  SortOptions _currentSort = const SortOptions();
+
+  // Get all tasks and events (unfiltered)
+  List<Task> get allTasks => tasks;
+  List<CalendarEvent> get allEvents => events;
+
+  // Get filtered and sorted tasks
+  List<Task> get filteredTasks {
+    var filtered = List<Task>.from(tasks);
+
+    // Apply filters
+    filtered = _applyTaskFilters(filtered);
+
+    // Apply sorting
+    filtered = _applyTaskSorting(filtered);
+
+    return filtered;
+  }
+
+  // Get filtered and sorted events
+  List<CalendarEvent> get filteredEvents {
+    var filtered = List<CalendarEvent>.from(events);
+
+    // Apply filters
+    filtered = _applyEventFilters(filtered);
+
+    // Apply sorting
+    filtered = _applyEventSorting(filtered);
+
+    return filtered;
+  }
+
+  FilterOptions get currentFilters => _currentFilters;
+  SortOptions get currentSort => _currentSort;
 
   final List<String> sampleTasks = [
     "Buy groceries",
@@ -240,21 +278,281 @@ class HomeController extends ChangeNotifier {
     }
   }
 
-  /// Get combined item count for the unified list
-  int getCombinedItemCount() {
-    return tasks.length + events.length;
+  /// Update filters
+  void updateFilters(FilterOptions filters) {
+    _currentFilters = filters;
+    notifyListeners();
   }
 
-  /// Build combined item for the unified list
+  /// Update sort options
+  void updateSort(SortOptions sort) {
+    _currentSort = sort;
+    notifyListeners();
+  }
+
+  /// Clear all filters
+  void clearFilters() {
+    _currentFilters = const FilterOptions();
+    notifyListeners();
+  }
+
+  /// Apply filters to tasks
+  List<Task> _applyTaskFilters(List<Task> taskList) {
+    var filtered = taskList;
+
+    // Priority filter
+    if (_currentFilters.priorities != null &&
+        _currentFilters.priorities!.isNotEmpty) {
+      filtered = filtered.where((task) {
+        return _currentFilters.priorities!.contains(task.priority);
+      }).toList();
+    }
+
+    // Date range filter
+    if (_currentFilters.startDate != null || _currentFilters.endDate != null) {
+      filtered = filtered.where((task) {
+        if (task.deadline == null) return false;
+        final deadline = task.deadline!;
+        if (_currentFilters.startDate != null &&
+            deadline.isBefore(_currentFilters.startDate!)) {
+          return false;
+        }
+        if (_currentFilters.endDate != null &&
+            deadline.isAfter(_currentFilters.endDate!)) {
+          return false;
+        }
+        return true;
+      }).toList();
+    }
+
+    // Completion filter
+    if (_currentFilters.isCompleted != null) {
+      filtered = filtered.where((task) {
+        return task.done == _currentFilters.isCompleted;
+      }).toList();
+    }
+
+    // Quick filters
+    if (_currentFilters.quickFilter != null) {
+      final now = DateTime.now();
+      final today = DateTime(now.year, now.month, now.day);
+
+      switch (_currentFilters.quickFilter) {
+        case 'today':
+          filtered = filtered.where((task) {
+            if (task.deadline == null) return false;
+            final deadline = task.deadline!;
+            return deadline.year == today.year &&
+                deadline.month == today.month &&
+                deadline.day == today.day;
+          }).toList();
+          break;
+        case 'this_week':
+          final startOfWeek = today.subtract(Duration(days: today.weekday - 1));
+          final endOfWeek = startOfWeek.add(const Duration(days: 7));
+          filtered = filtered.where((task) {
+            if (task.deadline == null) return false;
+            final deadline = task.deadline!;
+            return deadline.isAfter(
+                  startOfWeek.subtract(const Duration(days: 1)),
+                ) &&
+                deadline.isBefore(endOfWeek);
+          }).toList();
+          break;
+        case 'overdue':
+          filtered = filtered.where((task) {
+            if (task.deadline == null || task.done) return false;
+            final deadline = task.deadline!;
+            return deadline.isBefore(today);
+          }).toList();
+          break;
+        case 'high_priority':
+          filtered = filtered.where((task) {
+            return task.priority == 'High';
+          }).toList();
+          break;
+      }
+    }
+
+    return filtered;
+  }
+
+  /// Apply filters to events
+  List<CalendarEvent> _applyEventFilters(List<CalendarEvent> eventList) {
+    var filtered = eventList;
+
+    // Priority filter
+    if (_currentFilters.priorities != null &&
+        _currentFilters.priorities!.isNotEmpty) {
+      filtered = filtered.where((event) {
+        return _currentFilters.priorities!.contains(event.priority);
+      }).toList();
+    }
+
+    // Tags filter
+    if (_currentFilters.tags != null && _currentFilters.tags!.isNotEmpty) {
+      filtered = filtered.where((event) {
+        return _currentFilters.tags!.any((tag) => event.tags.contains(tag));
+      }).toList();
+    }
+
+    // Date range filter
+    if (_currentFilters.startDate != null || _currentFilters.endDate != null) {
+      filtered = filtered.where((event) {
+        final eventDate = event.startDate ?? event.date;
+        if (_currentFilters.startDate != null &&
+            eventDate.isBefore(_currentFilters.startDate!)) {
+          return false;
+        }
+        if (_currentFilters.endDate != null &&
+            eventDate.isAfter(_currentFilters.endDate!)) {
+          return false;
+        }
+        return true;
+      }).toList();
+    }
+
+    // Source filter
+    if (_currentFilters.sources != null &&
+        _currentFilters.sources!.isNotEmpty) {
+      filtered = filtered.where((event) {
+        return event.source != null &&
+            _currentFilters.sources!.contains(event.source);
+      }).toList();
+    }
+
+    // Completion filter
+    if (_currentFilters.isCompleted != null) {
+      filtered = filtered.where((event) {
+        return event.isCompleted == _currentFilters.isCompleted;
+      }).toList();
+    }
+
+    // Quick filters
+    if (_currentFilters.quickFilter != null) {
+      final now = DateTime.now();
+      final today = DateTime(now.year, now.month, now.day);
+
+      switch (_currentFilters.quickFilter) {
+        case 'today':
+          filtered = filtered.where((event) {
+            final eventDate = event.startDate ?? event.date;
+            return eventDate.year == today.year &&
+                eventDate.month == today.month &&
+                eventDate.day == today.day;
+          }).toList();
+          break;
+        case 'this_week':
+          final startOfWeek = today.subtract(Duration(days: today.weekday - 1));
+          final endOfWeek = startOfWeek.add(const Duration(days: 7));
+          filtered = filtered.where((event) {
+            final eventDate = event.startDate ?? event.date;
+            return eventDate.isAfter(
+                  startOfWeek.subtract(const Duration(days: 1)),
+                ) &&
+                eventDate.isBefore(endOfWeek);
+          }).toList();
+          break;
+        case 'overdue':
+          filtered = filtered.where((event) {
+            if (event.isCompleted) return false;
+            final eventDate = event.startDate ?? event.date;
+            return eventDate.isBefore(today);
+          }).toList();
+          break;
+        case 'high_priority':
+          filtered = filtered.where((event) {
+            return event.priority == 'High';
+          }).toList();
+          break;
+      }
+    }
+
+    return filtered;
+  }
+
+  /// Apply sorting to tasks
+  List<Task> _applyTaskSorting(List<Task> taskList) {
+    final sorted = List<Task>.from(taskList);
+
+    sorted.sort((a, b) {
+      int comparison = 0;
+
+      switch (_currentSort.field) {
+        case SortField.date:
+          final aDate = a.deadline ?? DateTime(0);
+          final bDate = b.deadline ?? DateTime(0);
+          comparison = aDate.compareTo(bDate);
+          break;
+        case SortField.priority:
+          final priorityOrder = {'High': 3, 'Medium': 2, 'Low': 1};
+          final aPriority = priorityOrder[a.priority] ?? 0;
+          final bPriority = priorityOrder[b.priority] ?? 0;
+          comparison = aPriority.compareTo(bPriority);
+          break;
+        case SortField.title:
+          comparison = a.name.compareTo(b.name);
+          break;
+      }
+
+      return _currentSort.order == SortOrder.ascending
+          ? comparison
+          : -comparison;
+    });
+
+    return sorted;
+  }
+
+  /// Apply sorting to events
+  List<CalendarEvent> _applyEventSorting(List<CalendarEvent> eventList) {
+    final sorted = List<CalendarEvent>.from(eventList);
+
+    sorted.sort((a, b) {
+      int comparison = 0;
+
+      switch (_currentSort.field) {
+        case SortField.date:
+          final aDate = a.startDate ?? a.date;
+          final bDate = b.startDate ?? b.date;
+          comparison = aDate.compareTo(bDate);
+          break;
+        case SortField.priority:
+          final priorityOrder = {'High': 3, 'Medium': 2, 'Low': 1};
+          final aPriority = priorityOrder[a.priority] ?? 0;
+          final bPriority = priorityOrder[b.priority] ?? 0;
+          comparison = aPriority.compareTo(bPriority);
+          break;
+        case SortField.title:
+          comparison = a.title.compareTo(b.title);
+          break;
+      }
+
+      return _currentSort.order == SortOrder.ascending
+          ? comparison
+          : -comparison;
+    });
+
+    return sorted;
+  }
+
+  /// Get combined item count for the unified list (filtered)
+  int getCombinedItemCount() {
+    return filteredTasks.length + filteredEvents.length;
+  }
+
+  /// Build combined item for the unified list (filtered)
   Widget buildCombinedItem(BuildContext context, int index) {
-    if (index < tasks.length) {
+    final filteredTasksList = filteredTasks;
+    final filteredEventsList = filteredEvents;
+
+    if (index < filteredTasksList.length) {
       // This is a task
-      final task = tasks[index];
+      final task = filteredTasksList[index];
       return TaskCard(task: task, onChecked: (bool? value) => toggleTask(task));
     } else {
       // This is an event
-      final eventIndex = index - tasks.length;
-      final event = events[eventIndex];
+      final eventIndex = index - filteredTasksList.length;
+      final event = filteredEventsList[eventIndex];
       return Dismissible(
         key: Key('event_${event.id}'),
         background: Container(
