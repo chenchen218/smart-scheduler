@@ -4,6 +4,9 @@ import 'widgets/home_header.dart';
 import 'widgets/home_tab_navigation.dart';
 import 'widgets/task_list_widget.dart';
 import 'widgets/event_list_widget.dart';
+import 'widgets/filter_panel.dart';
+import 'widgets/sort_panel.dart';
+import 'widgets/quick_filters.dart';
 import 'controllers/home_controller.dart';
 import '../add_event/add_event_screen.dart';
 import '../search/search_screen.dart';
@@ -76,6 +79,40 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     );
   }
 
+  void _onFilter() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => FilterPanel(
+        currentFilters: _controller.currentFilters,
+        currentSort: _controller.currentSort,
+        allTasks: _controller.allTasks,
+        allEvents: _controller.allEvents,
+        onFiltersChanged: (filters) {
+          _controller.updateFilters(filters);
+        },
+        onSortChanged: (sort) {
+          _controller.updateSort(sort);
+        },
+      ),
+    );
+  }
+
+  void _onSort() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => SortPanel(
+        currentSort: _controller.currentSort,
+        onSortChanged: (sort) {
+          _controller.updateSort(sort);
+        },
+      ),
+    );
+  }
+
   void _onRefresh() {
     print('Manual refresh triggered');
     _controller.loadEvents();
@@ -109,10 +146,20 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             // Header section with app title, progress bar, and action buttons
             HomeHeader(
               onSearch: _onSearch,
-              tasks: _controller.tasks,
+              tasks: _controller.filteredTasks,
               onAddEvent: _onAddEvent,
               onRefresh: _onRefresh,
               onDebugAllEvents: _onDebugAllEvents,
+              onFilter: _onFilter,
+              onSort: _onSort,
+              hasActiveFilters: _controller.currentFilters.hasActiveFilters,
+            ),
+            // Quick filters
+            QuickFilters(
+              currentFilters: _controller.currentFilters,
+              onQuickFilterSelected: (filters) {
+                _controller.updateFilters(filters);
+              },
             ),
             // Main content area with tabbed interface
             Expanded(
@@ -121,8 +168,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                   // Tab bar for switching between Tasks and Events
                   HomeTabNavigation(
                     tabController: _tabController,
-                    taskCount: _controller.tasks.length,
-                    eventCount: _controller.events.length,
+                    taskCount: _controller.filteredTasks.length,
+                    eventCount: _controller.filteredEvents.length,
                   ),
                   const SizedBox(height: 8),
                   // Tab content area with dynamic list views
@@ -132,8 +179,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                       children: [
                         // First tab: Combined view showing both tasks and events
                         TaskListWidget(
-                          tasks: _controller.tasks,
-                          events: _controller.events,
+                          tasks: _controller.filteredTasks,
+                          events: _controller.filteredEvents,
                           buildCombinedItem: _controller.buildCombinedItem,
                           getCombinedItemCount:
                               _controller.getCombinedItemCount,
@@ -144,7 +191,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                         ),
                         // Second tab: Dedicated events view with AnimatedList
                         EventListWidget(
-                          events: _controller.events,
+                          events: _controller.filteredEvents,
                           onEditEvent: _onEditEvent,
                           onDeleteEvent: _controller.deleteEvent,
                           onToggleEventCompletion:

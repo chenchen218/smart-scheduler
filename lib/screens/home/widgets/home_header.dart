@@ -9,6 +9,9 @@ class HomeHeader extends StatelessWidget {
   final VoidCallback onRefresh;
   final VoidCallback onDebugAllEvents;
   final VoidCallback? onSearch;
+  final VoidCallback? onFilter;
+  final VoidCallback? onSort;
+  final bool hasActiveFilters;
 
   const HomeHeader({
     super.key,
@@ -17,6 +20,9 @@ class HomeHeader extends StatelessWidget {
     required this.onRefresh,
     required this.onDebugAllEvents,
     this.onSearch,
+    this.onFilter,
+    this.onSort,
+    this.hasActiveFilters = false,
   });
 
   @override
@@ -80,6 +86,25 @@ class HomeHeader extends StatelessWidget {
                       icon: Icons.search_rounded,
                       onPressed: onSearch!,
                       tooltip: 'Search',
+                    ),
+                    const SizedBox(width: 8),
+                  ],
+                  if (onFilter != null) ...[
+                    _buildActionButton(
+                      context,
+                      icon: Icons.filter_list_rounded,
+                      onPressed: onFilter!,
+                      tooltip: 'Filter',
+                      isActive: hasActiveFilters,
+                    ),
+                    const SizedBox(width: 8),
+                  ],
+                  if (onSort != null) ...[
+                    _buildActionButton(
+                      context,
+                      icon: Icons.sort_rounded,
+                      onPressed: onSort!,
+                      tooltip: 'Sort',
                     ),
                     const SizedBox(width: 8),
                   ],
@@ -152,6 +177,7 @@ class HomeHeader extends StatelessWidget {
     required IconData icon,
     required VoidCallback onPressed,
     required String tooltip,
+    bool isActive = false,
   }) {
     final colorScheme = Theme.of(context).colorScheme;
 
@@ -159,16 +185,24 @@ class HomeHeader extends StatelessWidget {
       width: 36,
       height: 36,
       decoration: BoxDecoration(
-        color: colorScheme.surface,
+        color: isActive ? colorScheme.primaryContainer : colorScheme.surface,
         borderRadius: BorderRadius.circular(10),
         border: Border.all(
-          color: colorScheme.outline.withOpacity(0.2),
-          width: 0.5,
+          color: isActive
+              ? colorScheme.primary
+              : colorScheme.outline.withOpacity(0.2),
+          width: isActive ? 1.5 : 0.5,
         ),
       ),
       child: IconButton(
         onPressed: onPressed,
-        icon: Icon(icon, size: 18, color: colorScheme.onSurface),
+        icon: Icon(
+          icon,
+          size: 18,
+          color: isActive
+              ? colorScheme.onPrimaryContainer
+              : colorScheme.onSurface,
+        ),
         tooltip: tooltip,
         padding: EdgeInsets.zero,
         constraints: const BoxConstraints(),
