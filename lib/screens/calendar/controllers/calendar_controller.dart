@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:table_calendar/table_calendar.dart';
 import 'package:intl/intl.dart';
 import '../../../models/calendar_event.dart';
+import '../../../models/calendar_view_type.dart';
 import '../../../service/calendar_service.dart';
 import '../../add_event/add_event_screen.dart';
 
@@ -20,6 +21,7 @@ class CalendarController extends ChangeNotifier {
   RangeSelectionMode _rangeSelectionMode = RangeSelectionMode.toggledOff;
   DateTime? _rangeStart;
   DateTime? _rangeEnd;
+  CalendarViewType _currentView = CalendarViewType.month;
 
   // Getters
   DateTime get focusedDay => _focusedDay;
@@ -28,19 +30,147 @@ class CalendarController extends ChangeNotifier {
   RangeSelectionMode get rangeSelectionMode => _rangeSelectionMode;
   DateTime? get rangeStart => _rangeStart;
   DateTime? get rangeEnd => _rangeEnd;
+  CalendarViewType get currentView => _currentView;
   ValueNotifier<List<CalendarEvent>> get selectedEvents => _selectedEvents;
+
+  /// Get all events for a date range
+  Future<List<CalendarEvent>> getEventsForDateRange(
+    DateTime start,
+    DateTime end,
+  ) async {
+    try {
+      final allEvents = await _calendarService.getEvents();
+      return allEvents.where((event) {
+        final eventDate = event.startDate ?? event.date;
+        return eventDate.isAfter(start.subtract(const Duration(days: 1))) &&
+            eventDate.isBefore(end.add(const Duration(days: 1)));
+      }).toList();
+    } catch (e) {
+      print('Error loading events for date range: $e');
+      return [];
+    }
+  }
+
+  /// Change calendar view
+  void changeView(CalendarViewType view) {
+    if (_currentView != view) {
+      _currentView = view;
+      notifyListeners();
+    }
+  }
+
+  /// Navigate to previous period
+  void navigatePrevious() {
+    switch (_currentView) {
+      case CalendarViewType.day:
+        _focusedDay = _focusedDay.subtract(const Duration(days: 1));
+        break;
+      case CalendarViewType.week:
+        _focusedDay = _focusedDay.subtract(const Duration(days: 7));
+        break;
+      case CalendarViewType.month:
+        _focusedDay = DateTime(_focusedDay.year, _focusedDay.month - 1, 1);
+        break;
+      case CalendarViewType.year:
+        _focusedDay = DateTime(_focusedDay.year - 1, _focusedDay.month, 1);
+        break;
+      case CalendarViewType.agenda:
+        // Agenda doesn't need navigation
+        break;
+    }
+    notifyListeners();
+    _loadEventsForCurrentView();
+  }
+
+  /// Navigate to next period
+  void navigateNext() {
+    switch (_currentView) {
+      case CalendarViewType.day:
+        _focusedDay = _focusedDay.add(const Duration(days: 1));
+        break;
+      case CalendarViewType.week:
+        _focusedDay = _focusedDay.add(const Duration(days: 7));
+        break;
+      case CalendarViewType.month:
+        _focusedDay = DateTime(_focusedDay.year, _focusedDay.month + 1, 1);
+        break;
+      case CalendarViewType.year:
+        _focusedDay = DateTime(_focusedDay.year + 1, _focusedDay.month, 1);
+        break;
+      case CalendarViewType.agenda:
+        // Agenda doesn't need navigation
+        break;
+    }
+    notifyListeners();
+    _loadEventsForCurrentView();
+  }
+
+  /// Navigate to today
+  void navigateToToday() {
+    _focusedDay = DateTime.now();
+    _selectedDay = DateTime.now();
+    notifyListeners();
+    _loadEventsForCurrentView();
+  }
+
+  /// Load events for current view
+  Future<void> _loadEventsForCurrentView() async {
+    switch (_currentView) {
+      case CalendarViewType.day:
+        if (_selectedDay != null) {
+          await _loadEventsForSelectedDay(_selectedDay!);
+        }
+        break;
+      case CalendarViewType.week:
+        final startOfWeek = _getStartOfWeek(_focusedDay);
+        final endOfWeek = startOfWeek.add(const Duration(days: 7));
+        final events = await getEventsForDateRange(startOfWeek, endOfWeek);
+        _selectedEvents.value = events;
+        break;
+      case CalendarViewType.month:
+        await _preloadMonthEvents(_focusedDay);
+        if (_selectedDay != null) {
+          await _loadEventsForSelectedDay(_selectedDay!);
+        }
+        break;
+      case CalendarViewType.agenda:
+        // Load all upcoming events
+        final now = DateTime.now();
+        final futureEvents = await getEventsForDateRange(
+          now,
+          now.add(const Duration(days: 365)),
+        );
+        _selectedEvents.value = futureEvents
+          ..sort(
+            (a, b) => (a.startDate ?? a.date).compareTo(b.startDate ?? b.date),
+          );
+        break;
+      case CalendarViewType.year:
+        // Load events for the year
+        final startOfYear = DateTime(_focusedDay.year, 1, 1);
+        final endOfYear = DateTime(_focusedDay.year + 1, 1, 1);
+        final events = await getEventsForDateRange(startOfYear, endOfYear);
+        _selectedEvents.value = events;
+        break;
+    }
+  }
+
+  /// Get start of week (Monday)
+  DateTime _getStartOfWeek(DateTime date) {
+    final weekday = date.weekday;
+    return date.subtract(Duration(days: weekday - 1));
+  }
 
   /// Initialize the calendar
   Future<void> initialize() async {
     _selectedDay = _focusedDay;
     await _loadEvents();
-    await _preloadMonthEvents(_focusedDay);
+    await _loadEventsForCurrentView();
   }
 
   /// Preload events for the current month to show visual indicators
   Future<void> _preloadMonthEvents(DateTime month) async {
     try {
-      final startOfMonth = DateTime(month.year, month.month, 1);
       final endOfMonth = DateTime(month.year, month.month + 1, 0);
 
       // Load events for the entire month
